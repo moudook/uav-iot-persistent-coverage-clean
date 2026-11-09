@@ -44,9 +44,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from uav_wireless.env import N_ACTIONS, UAVIoTEnv, SimConfig
 
 
-# ----------------------------------------------------------------------
-# Networks
-# ----------------------------------------------------------------------
+                                                                        
+          
+                                                                        
 class QNet(nn.Module):
     def __init__(self, obs_dim, hidden=128, n_actions=N_ACTIONS):
         super().__init__()
@@ -78,9 +78,9 @@ class ActorCritic(nn.Module):
         return self.actor(obs), self.critic(obs).squeeze(-1)
 
 
-# ----------------------------------------------------------------------
-# Independent DQN
-# ----------------------------------------------------------------------
+                                                                        
+                 
+                                                                        
 class IDDQN:
     """One Q-network per agent; independent learning on the team reward."""
 
@@ -96,7 +96,7 @@ class IDDQN:
         self.q_target = QNet(obs_dim, hidden).to(device)
         self.q_target.load_state_dict(self.q.state_dict())
         self.opt = torch.optim.Adam(self.q.parameters(), lr=lr)
-        self.replay = []          # (obs[N,O], act[N], rew, obs2[N,O], done)
+        self.replay = []                                                    
 
     def act(self, obs, mask, deterministic=False, eps=0.0):
         """Greedy action per agent, with epsilon-greedy exploration."""
@@ -113,7 +113,7 @@ class IDDQN:
         rnd = np.random.randint(0, N_ACTIONS, size=len(greedy))
         pick = np.random.rand(len(greedy)) < eps
         acts = np.where(pick, rnd, greedy)
-        # an exploratory action must still be feasible
+                                                      
         for i, a in enumerate(acts):
             if not mask[i][a]:
                 acts[i] = greedy[i]
@@ -148,15 +148,15 @@ class IDDQN:
             if self.double:
                 q_online = self.q(obs2)
                 a_star = q_online.argmax(dim=-1, keepdim=True)
-                q_next = q_next.gather(-1, a_star).squeeze(-1)     # (B, N)
+                q_next = q_next.gather(-1, a_star).squeeze(-1)             
             else:
-                q_next = q_next.max(dim=-1).values                 # (B, N)
-            # the team reward and the done flag are per time step, shape
-            # (B,); they have to be broadcast across the agents
+                q_next = q_next.max(dim=-1).values                         
+                                                                        
+                                                               
             target = (rew[:, None, None]
                       + self.gamma * (1.0 - done)[:, None, None]
-                      * q_next.unsqueeze(-1))                      # (B, N, 1)
-        q = self.q(obs).gather(-1, acts.unsqueeze(-1)).squeeze(-1)  # (B, N)
+                      * q_next.unsqueeze(-1))                                 
+        q = self.q(obs).gather(-1, acts.unsqueeze(-1)).squeeze(-1)          
         loss = F.smooth_l1_loss(q, target.squeeze(-1))
         self.opt.zero_grad()
         loss.backward()
@@ -194,7 +194,7 @@ def train_id_dqn(cfg: SimConfig, episodes=20, steps=None, seed=0,
             ep_r += r
             if done:
                 break
-        for _ in range(4):                      # a few gradient steps per step
+        for _ in range(4):                                                     
             agent.update()
         agent.sync_target()
         eps = max(eps_end, eps * eps_decay)
@@ -206,9 +206,9 @@ def train_id_dqn(cfg: SimConfig, episodes=20, steps=None, seed=0,
     return agent, hist
 
 
-# ----------------------------------------------------------------------
-# Masked PPO with a local critic
-# ----------------------------------------------------------------------
+                                                                        
+                                
+                                                                        
 class PPOLocal:
     """Per-agent actor and per-agent local critic; no parameter sharing, no
     centralised critic.  Keeps the action mask."""
@@ -334,7 +334,7 @@ def train_ppo_local(cfg: SimConfig, episodes=20, steps=None, seed=0,
             obs = obs2
             if done:
                 break
-        # GAE on the team reward, with the local critic
+                                                       
         adv = np.zeros_like(B["rew"])
         last = np.zeros(cfg.N, dtype=np.float32)
         for step in reversed(range(t)):
@@ -342,11 +342,11 @@ def train_ppo_local(cfg: SimConfig, episodes=20, steps=None, seed=0,
             delta = B["rew"][step] + agent.gamma * next_v - B["values"][step]
             last = delta + agent.gamma * agent.lam * last
             adv[step] = last
-        # The advantage array is allocated for the full horizon and only the
-        # first t rows are filled, so it must be truncated BEFORE the returns
-        # are formed.  An episode that ends early -- which happens whenever a
-        # UAV failure terminates the mission -- makes t < n_steps, and the
-        # untruncated addition is a shape mismatch.
+                                                                            
+                                                                             
+                                                                             
+                                                                          
+                                                   
         ret = adv[:t] + B["values"][:t]
         B = {k: v[:t] for k, v in B.items()}
         info = agent.update(B, adv[:t], ret, B["logp"])
@@ -359,9 +359,9 @@ def train_ppo_local(cfg: SimConfig, episodes=20, steps=None, seed=0,
     return agent, hist
 
 
-# ----------------------------------------------------------------------
-# Evaluation
-# ----------------------------------------------------------------------
+                                                                        
+            
+                                                                        
 def eval_id_dqn(agent, cfg, steps=None, seed=0):
     steps = steps or cfg.episode_len
     c = copy.deepcopy(cfg)
@@ -386,8 +386,8 @@ def eval_ppo_local(agent, cfg, steps=None, seed=0, deterministic=False):
     steps = steps or cfg.episode_len
     c = copy.deepcopy(cfg)
     c.seed = seed
-    # this policy samples, so the global torch RNG must be seeded: see
-    # uav_wireless/seeding.py
+                                                                      
+                             
     from .seeding import seed_evaluation
     seed_evaluation(seed)
     env = UAVIoTEnv(c)

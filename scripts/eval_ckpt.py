@@ -64,9 +64,9 @@ def main():
     scenes = list(range(a.eval_offset, a.eval_offset + a.eval_seeds))
     results = {}
     for ck in ckpts:
-        # the configuration is recovered from the training record, so that a
-        # checkpoint is always evaluated with the environment it was trained
-        # in and never with the default one
+                                                                            
+                                                                            
+                                           
         meta_path = ck.replace(".pt", ".json")
         with open(meta_path, encoding="utf-8") as f:
             meta = json.load(f)

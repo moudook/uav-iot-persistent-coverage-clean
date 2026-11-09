@@ -31,7 +31,7 @@ def main():
             if v not in ln:
                 continue
             if ln.lstrip()[:1] == "\\" and "newcommand" in ln.lstrip()[:20]:
-                continue  # token definitions are data, not prose
+                continue                                         
             window = ln.lower()
             if i > 1:
                 window += " " + lines[i - 2].lower()

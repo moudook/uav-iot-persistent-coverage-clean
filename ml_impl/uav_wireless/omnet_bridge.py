@@ -30,7 +30,7 @@ class MlBridge:
         self.transitions = []
         self.running = False
 
-    # ------------------------------------------------------------------
+                                                                        
     def start(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -42,7 +42,7 @@ class MlBridge:
         print(f"[bridge] OMNeT++ connected from {addr}")
         self._serve(conn)
 
-    # ------------------------------------------------------------------
+                                                                        
     def _send(self, conn, obj):
         conn.sendall((json.dumps(obj) + "\n").encode())
 
@@ -83,16 +83,16 @@ class MlBridge:
         conn.close()
         self.sock.close()
 
-    # ------------------------------------------------------------------
+                                                                        
     def _select(self, msg, n):
         """Use the MAPPO actor if one is attached, else a greedy rule."""
         if self.agent is None:
-            return [0] * n                       # hover
+            return [0] * n                              
         obs = np.array([u["obs"] for u in msg["uavs"]], dtype=np.float32)
         mask = np.array([u.get("mask", [True] * 6) for u in msg["uavs"]], dtype=bool)
         try:
             return [int(a) for a in self.agent.act(obs, mask, deterministic=True)]
-        except Exception as e:                      # keep the sim alive
+        except Exception as e:                                          
             print(f"[bridge] policy error ({e}); hovering")
             return [0] * n
 

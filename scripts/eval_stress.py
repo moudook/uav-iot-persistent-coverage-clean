@@ -34,9 +34,9 @@ from uav_wireless.train import (baseline_fixed, baseline_greedy,
                                 baseline_reactive, baseline_reactive_local)
 from stress_regimes import get_config, REGIMES
 
-# the learner checkpoints were trained in this configuration (ego
-# bearings + distance shaping); this must be applied on top of every
-# regime override when the learner is evaluated.
+                                                                 
+                                                                    
+                                                
 LEARNER_ANCHOR = dict(ego_sensors=True, n_ego=3,
                       dist_shape_kappa=0.5, use_w_penalty=True,
                       use_critical_anchor=False)
@@ -59,16 +59,16 @@ def learner_anchor_from_meta(ckpt_list):
             pass
     return anchor
 
-# Regimes that change the size of the observation or the state cannot
-# load a checkpoint trained on the nominal architecture: the actor and
-# critic input dims are fixed by N, M and n_pads.  Zero-shot
-# evaluation is therefore only defined on the regimes below.
+                                                                     
+                                                                      
+                                                            
+                                                            
 SAME_DIM_REGIMES = {"nominal", "small_battery", "low_comm",
                     "failure", "multi_failure", "clustered"}
 
 RULES_ALL = [("Fixed", baseline_fixed), ("Greedy", baseline_greedy),
             ("Reactive", baseline_reactive), ("Reactive-local", baseline_reactive_local)]
-RULES = None  # set from --rules
+RULES = None                    
 
 
 def eval_learner_on_regime(ckpt_list, cfg, scenes, steps):
@@ -76,7 +76,7 @@ def eval_learner_on_regime(ckpt_list, cfg, scenes, steps):
     for ck in ckpt_list:
         import json as _j
         meta = _j.load(open(ck.replace(".pt", ".json"), encoding="utf-8"))
-        # build env to get dims
+                               
         env = UAVIoTEnv(cfg)
         ag = MAPPO(n_agents=cfg.N, obs_dim=env.obs_dim,
                    state_dim=env.state_dim, device="cpu")
@@ -119,7 +119,7 @@ def main():
         for _k, _v in _anchor_flags.items():
             setattr(learner_cfg, _k, _v)
         learner_cfg.episode_len = a.steps
-        # rules
+               
         rule_summary = {}
         for name, fn in RULES:
             cks = [float(fn(rule_cfg, steps=a.steps, seed=s)["CK"]) for s in scenes]
@@ -128,8 +128,8 @@ def main():
                                   "per_scene": cks}
         best_rule = max(rule_summary.values(), key=lambda v: v["CK"])
         best_name = max(rule_summary, key=lambda k: rule_summary[k]["CK"])
-        # learner (its own anchor config on top of the regime); only where
-        # the architecture dims are unchanged
+                                                                          
+                                             
         if regime in SAME_DIM_REGIMES:
             learner_per_seed = eval_learner_on_regime(ckpts, learner_cfg, scenes, a.steps)
         else:
@@ -157,7 +157,7 @@ def main():
     outdir = os.path.join(os.path.dirname(__file__), "..", "ml_impl", "runs", "stress_eval")
     os.makedirs(outdir, exist_ok=True)
     out = a.out or os.path.join(outdir, "stress_eval.json")
-    # merge with an existing artifact (the --only runs update single regimes)
+                                                                             
     merged = {}
     if os.path.exists(out):
         try:
@@ -169,7 +169,7 @@ def main():
         json.dump({"regimes": merged, "scenes": scenes, "steps": a.steps,
                    "tag": a.tag, "n_seeds": len(ckpts)}, f, indent=1)
     print("\nwrote", out)
-    # summary table
+                   
     print("\n%-16s %-18s %8s %8s %8s" % ("regime", "best rule", "rule CK", "learner", "headroom"))
     for r, v in results.items():
         print("%-16s %-18s %8.4f %8.4f %8.4f" % (r, v["best_rule"], v["best_rule_ck"],

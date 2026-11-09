@@ -40,7 +40,7 @@ from uav_wireless.env import UAVIoTEnv, SimConfig
 from uav_wireless.experiments import base_config
 from feasibility import search_best, is_connected_at
 
-# action constants
+                  
 A_HOVER, A_PX, A_NX, A_PY, A_NY, A_CHARGE = 0, 1, 2, 3, 4, 5
 DIRS = {A_PX: (1, 0), A_NX: (-1, 0), A_PY: (0, 1), A_NY: (0, -1)}
 
@@ -61,38 +61,38 @@ def classical_eval(cfg, steps, seed):
     env = UAVIoTEnv(c)
     env.reset()
 
-    # precompute oracle formation (connected, K-covering)
+                                                         
     pos, ck = search_best(env, iters=80, restarts=12,
                           rng=np.random.default_rng(seed + 7919),
                           connected_only=True)
     if pos is None:
-        # fallback: spread UAVs evenly
+                                      
         pos = np.array([[cfg.side * (i % 4 + 0.5) / 4.0,
                          cfg.side * (i // 4 + 0.5) / 2.0] for i in range(cfg.N)])
     formation = np.asarray(pos, dtype=float)
 
-    # slot occupancy: which UAV is assigned to which slot
-    slot_of = {}  # slot_idx -> uav_idx
-    uav_slot = {}  # uav_idx -> slot_idx
+                                                         
+    slot_of = {}                       
+    uav_slot = {}                       
 
     for _ in range(steps):
         acts = np.zeros(cfg.N, dtype=np.int64)
         active = list(env._active_idx())
 
-        # determine who needs to charge
+                                       
         charging = set()
         for i in active:
             if env.E[i] <= env.return_threshold(i):
                 charging.add(i)
 
-        # active UAVs that are not charging
+                                           
         serving = [i for i in active if i not in charging]
 
-        # assign serving UAVs to formation slots via Hungarian
+                                                              
         if serving and len(formation) >= len(serving):
-            # build cost matrix: serving x slots
-            # available slots = those not occupied by a charging UAV that's
-            # still at its slot... simplify: all slots available
+                                                
+                                                                           
+                                                                
             cost = np.zeros((len(serving), len(formation)))
             for si, i in enumerate(serving):
                 for sj in range(len(formation)):
@@ -102,13 +102,13 @@ def classical_eval(cfg, steps, seed):
                 i = serving[si]
                 slot = sj
                 target = formation[slot]
-                # move toward target
+                                    
                 if np.linalg.norm(env.p[i] - target) < 2.0:
                     acts[i] = A_HOVER
                 else:
                     acts[i] = move_toward(env, i, target)
 
-        # charging UAVs
+                       
         for i in charging:
             if np.min(np.linalg.norm(env.pads - env.p[i], axis=1)) <= cfg.pad_service_radius:
                 acts[i] = A_CHARGE
@@ -116,7 +116,7 @@ def classical_eval(cfg, steps, seed):
                 nearest_pad = env.pads[int(np.argmin(np.linalg.norm(env.pads - env.p[i], axis=1)))]
                 acts[i] = move_toward(env, i, nearest_pad)
 
-        # failed UAVs (mode -1) are handled by env
+                                                  
         obs, st, r, done, _ = env.step(acts)
         if done:
             break
@@ -133,7 +133,7 @@ def main():
     ap.add_argument("--out", default="")
     a = ap.parse_args()
 
-    # use base config (nominal)
+                               
     cfg = base_config()
     cfg.ego_sensors = True
     cfg.n_ego = 3

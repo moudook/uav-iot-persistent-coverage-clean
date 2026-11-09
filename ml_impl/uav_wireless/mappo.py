@@ -33,7 +33,7 @@ class Actor(nn.Module):
         super().__init__()
         self.net = mlp([obs_dim, hidden, hidden], nn.ReLU, None)
         self.head = nn.Linear(hidden, N_ACTIONS)
-        # orthogonal init (MAPPO/CleanRL default) for stability
+                                                               
         for m in self.modules():
             if isinstance(m, nn.Linear):
                 nn.init.orthogonal_(m.weight, gain=1.0)
@@ -78,17 +78,17 @@ class MAPPO:
         device="cpu",
         attn=False,
     ):
-        # Dimensions are configuration-dependent (they scale with N, M and
-        # n_pads). Falling back to the reference-config constants keeps old
-        # call sites working, but callers should pass env.obs_dim and
-        # env.state_dim so the networks always match the environment.
+                                                                          
+                                                                           
+                                                                     
+                                                                     
         obs_dim = UAVIoTEnv.OBS_DIM if obs_dim is None else obs_dim
         state_dim = UAVIoTEnv.STATE_DIM if state_dim is None else state_dim
         self.device = torch.device(device)
         from .attn_actor import make_actor
         self.actor = make_actor(obs_dim, hidden, attn=attn).to(self.device)
         self.critic = Critic(state_dim, hidden).to(self.device)
-        # Separate optimisers + separate grad clipping (SI feedback 1.3).
+                                                                         
         self.actor_opt = torch.optim.Adam(self.actor.parameters(), lr=lr)
         self.critic_opt = torch.optim.Adam(self.critic.parameters(), lr=lr)
         self.gamma = gamma
@@ -98,36 +98,36 @@ class MAPPO:
         self.vf_coef = vf_coef
         self.max_grad_norm = max_grad_norm
         self.n_agents = n_agents
-        # Per-agent advantage normalisation.  With a shared team reward every
-        # agent receives the SAME advantage, so the policy gradient cannot
-        # distinguish an agent whose action helped from one whose action was
-        # irrelevant.  Normalising each agent's advantages over its own
-        # history gives every agent a signal relative to its own behaviour
-        # rather than to the pooled batch.  (Generalised per-agent advantage
-        # estimation, Kim et al., AAMAS 2026, addresses the same problem for
-        # the multi-agent case.)
+                                                                             
+                                                                          
+                                                                            
+                                                                       
+                                                                          
+                                                                            
+                                                                            
+                                
         self.per_agent_adv_norm = per_agent_adv_norm
         self.attn = attn
-        # MAPPO's value normalisation.  The critic predicts the returns in a
-        # normalised space defined by running statistics of the return
-        # distribution; the value is un-normalised at every point of use.
+                                                                            
+                                                                      
+                                                                         
         self.value_norm = value_norm
         self.ret_ema_beta = 0.99
-        # KL anchor attributes (optional; used by residual/BC experiments)
+                                                                          
         self.ref_actor = None
         self.kl_coef = 0.0
         self.kl_target = 0.01
         self.ent_floor = 0.0
         self.ent_floor_coef = 0.0
         self._beta = 0.0
-        # floor on the standard deviation of the returns, so that a policy
-        # with nearly constant returns cannot drive the normalisation to
-        # zero and collapse the advantage
+                                                                          
+                                                                        
+                                         
         self.ret_std_floor = 1.0
         self._ret_mean = 0.0
         self._ret_std = 1.0
 
-    # ------------------------------------------------------------------
+                                                                        
     def masked_logits(self, obs, mask):
         logits = self.actor(obs)
         return logits.masked_fill(~mask, float("-inf"))
@@ -137,7 +137,7 @@ class MAPPO:
         obs = torch.as_tensor(obs_np, dtype=torch.float32, device=self.device)
         mask = torch.as_tensor(mask_np, dtype=torch.bool, device=self.device)
         logits = self.masked_logits(obs, mask)
-        # a fully-masked row would give NaNs: fall back to hover (index 0)
+                                                                          
         bad = torch.isinf(logits).all(dim=-1)
         if bad.any():
             logits[bad] = torch.zeros_like(logits[bad])
@@ -149,7 +149,7 @@ class MAPPO:
             a = torch.distributions.Categorical(logits=logp).sample()
         return a.cpu().numpy()
 
-    # ------------------------------------------------------------------
+                                                                        
     def value(self, states):
         """The value of a batch of global states, in the ORIGINAL reward scale.
 
@@ -190,11 +190,11 @@ class MAPPO:
         else:
             adv = (adv - adv.mean()) / (adv.std() + 1e-8)
 
-        # running value-norm stats updated once per rollout
+                                                           
         if self.value_norm:
             with torch.no_grad():
                 b = self.ret_ema_beta
-                # b weights the OLD estimate (smoothing), (1-b) the new batch
+                                                                             
                 self._ret_mean = b * self._ret_mean + (1 - b) * float(ret_c.mean())
                 sd = float(ret_c.std())
                 self._ret_std = max(b * self._ret_std + (1 - b) * sd,
@@ -240,7 +240,7 @@ class MAPPO:
                     w = torch.ones_like(w)
                 actor_loss = (per_sample_actor * w).sum() / w.sum()
 
-                # entropy (positive H)
+                                      
                 p_ = logp.exp() * mb_mask
                 ent = -(p_ * logp.clamp(min=-1e8)).sum(-1)
                 ent = torch.where(mb_mask.any(-1), ent, torch.zeros_like(ent))
@@ -249,7 +249,7 @@ class MAPPO:
                     w_ent = torch.ones_like(w_ent)
                 ent = (ent * w_ent).sum() / w_ent.sum()
 
-                # critic (clipped value loss)
+                                             
                 mb_states = states[t_idx]
                 new_val = self.critic(mb_states)
                 w_c = active_flat[mb].float()
@@ -265,7 +265,7 @@ class MAPPO:
                     per_c = (new_val - mb_target) ** 2
                     critic_loss = (per_c * w_c).sum() / w_c.sum()
 
-                # KL anchor to reference actor
+                                              
                 kl_loss = torch.tensor(0.0, device=self.device)
                 if self.ref_actor is not None:
                     with torch.no_grad():
@@ -287,7 +287,7 @@ class MAPPO:
                         self.ent_floor - ent, min=0.0
                     )
 
-                # entropy sign FIXED: subtract entropy bonus (maximise entropy)
+                                                                               
                 loss = (actor_loss - self.ent_coef * ent
                         + self.vf_coef * critic_loss
                         + kl_loss + ent_floor_loss)

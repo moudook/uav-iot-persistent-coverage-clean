@@ -37,7 +37,7 @@ def action_masks_safe(env):
     mask = np.stack(env.action_masks())
     for i in range(env.cfg.N):
         if mask[i].sum() == 0:
-            mask[i, 0] = True   # HOVER fallback
+            mask[i, 0] = True                   
     return mask
 
 

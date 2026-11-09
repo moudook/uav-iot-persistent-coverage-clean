@@ -39,14 +39,14 @@ for k in base["per_checkpoint"]:
     p = pl["per_checkpoint"][k]["mean"]
     print(f"  {k}: base={b:.4f} planned={p:.4f} diff={p-b:+.4f}")
 
-# rule comparison
-rule = 0.9169  # Reactive-local at 500 steps; at 2000 it's 0.923
+                 
+rule = 0.9169                                                   
 print()
 print("best rule (Reactive-local) at 2000 steps = 0.923 (report) / at 500 = 0.9169")
 print(f"planned - rule (2000 vs 0.923) = {m_pl - 0.923:+.4f}")
 print(f"base - rule (2000 vs 0.923) = {m_base - 0.923:+.4f}")
 
-# headroom gate: ceiling - best rule
+                                    
 print()
 print(f"headroom (ceiling 1.0 - rule 0.923) = {1.0 - 0.923:.4f}")
 print(f"headroom against planned = {1.0 - m_pl:.4f}")

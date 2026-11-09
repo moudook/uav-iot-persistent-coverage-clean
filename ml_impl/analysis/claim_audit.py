@@ -45,9 +45,9 @@ def check(claim_id, claim, ok, measured, expected, note="", data=None):
     return ok
 
 
-# ----------------------------------------------------------------------
-# Report parameters (Table IV)
-# ----------------------------------------------------------------------
+                                                                        
+                              
+                                                                        
 N = 8
 K = 2
 M = 20
@@ -64,8 +64,8 @@ P_MOVE = 75.0
 P_ELEC = 5.0
 P_TX = 0.5
 CHARGE_STEP = 0.0002
-EPISODE = 10_000          # the report's target episode length
-EPISODE_USED = 2_000     # the episode the reported results use
+EPISODE = 10_000                                              
+EPISODE_USED = 2_000                                           
 
 A = SIDE * SIDE
 
@@ -75,7 +75,7 @@ def main():
     print(" CLAIM AUDIT -- report claims vs. code reality")
     print("=" * 78 + "\n")
 
-    # --- C1: per-step displacement must be resolvable vs d_safe --------
+                                                                         
     step_disp = 2 * V_MAX * DT
     check("C1a", "per-step relative displacement 2*v_max*dt = 2 m (report)",
           abs(step_disp - 2.0) < 1e-9, f"{step_disp:.2f} m", "2 m")
@@ -84,11 +84,11 @@ def main():
           step_disp < D_SAFE, f"{step_disp:.2f} m", f"< {D_SAFE} m",
           "the separation constraint is resolvable at the sample rate")
 
-    # --- C1c: stopping distance for a HEAD-ON pair ----------------------
-    # Two UAVs converging head-on close at 2*v_max, so the relative speed is
-    # 10 m/s and the braking distance at a = 2 m/s^2 is 25 m = 5*d_safe.
-    # (The review note quotes v^2/(2a) = 100/4 = 25 m, which uses the
-    # closing speed 2*v_max, not v_max.)
+                                                                          
+                                                                            
+                                                                        
+                                                                     
+                                        
     a_max = 2.0
     v_close = 2.0 * V_MAX
     d_stop = v_close ** 2 / (2 * a_max)
@@ -97,9 +97,9 @@ def main():
           "the discrete mask enforces sample-time separation, not braking; "
           "this is a stated limitation of the discrete-time abstraction")
 
-    # --- C2: the feasibility certificate -------------------------------
-    # The packing lemma:  A K-covered by N discs of radius R  =>  N >= K*P(A,R),
-    # where P is the largest number of pairwise >2R-separated points of A.
+                                                                         
+                                                                                
+                                                                          
     from analysis.feasibility import (region_2cover_bound, sensor_packing_bound,
                                      packing_survey)
     import dataclasses
@@ -118,9 +118,9 @@ def main():
           "the sensors need not be near the corners, so the applicable bound "
           "is the packing bound below.")
 
-    # the tightness construction: 4K discs at the 2x2 cell centres, each
-    # layer displaced by a distinct vector of norm <= R - S/sqrt(2)/2 ... the
-    # farthest point of a cell from its centre is (S/2)*sqrt(2)/2.
+                                                                        
+                                                                             
+                                                                  
     cell_far = (SIDE / 2.0) * math.sqrt(2.0) / 2.0
     margin = R_COV - cell_far
     centres = [(SIDE / 4.0, SIDE / 4.0), (3 * SIDE / 4.0, SIDE / 4.0),
@@ -129,7 +129,7 @@ def main():
     for layer in range(K):
         for gx in np.linspace(0.0, SIDE, 41):
             for gy in np.linspace(0.0, SIDE, 41):
-                # distance to the NEAREST disc centre of this layer
+                                                                   
                 best = min(
                     math.hypot(gx - (cx + margin * math.cos(2 * math.pi * k / 4.0 + layer)),
                                gy - (cy + margin * math.sin(2 * math.pi * k / 4.0 + layer)))
@@ -159,11 +159,11 @@ def main():
           "the corner certificate is a statement about the REGION and does "
           "not transfer to a random sensor draw; the report says so.")
 
-    # --- C2d: the corner certificate's transfer to a sensor set ---------
-    # The report states the cap radius at which one sensor per corner
-    # still gives pairwise disjoint coverage discs, and the probability
-    # that a uniform draw lands one in each cap.  Both are recomputed
-    # here, from the configuration, rather than quoted.
+                                                                          
+                                                                     
+                                                                       
+                                                                     
+                                                       
     ct_path = os.path.join(HERE, "corner_transfer.json")
     if os.path.exists(ct_path):
         from uav_wireless.experiments import base_config
@@ -203,11 +203,11 @@ def main():
         print("[SKIP] the corner transfer: run analysis/corner_transfer.py\n")
 
 
-    # --- the device and the thread count are part of the protocol ------
-    # The paper says the device and the thread count have to be recorded
-    # with every artefact, because the floating-point kernels differ.  That
-    # was an argument; analysis/device_sensitivity.py measures it, and this
-    # item recomputes what the measurement says.
+                                                                         
+                                                                        
+                                                                           
+                                                                           
+                                                
     ds_path = os.path.join(HERE, "device_sensitivity.json")
     if os.path.exists(ds_path):
         with open(ds_path, encoding="utf-8") as f:
@@ -245,7 +245,7 @@ def main():
                   "cannot depend on how many cores the machine happened to "
                   "be using; this item records what it actually does here.")
 
-    # --- the alternative corrected deployment --------------------------
+                                                                         
     alt_path = os.path.join(HERE, "alt_deployment.json")
     if os.path.exists(alt_path):
         with open(alt_path, encoding="utf-8") as f:
@@ -266,7 +266,7 @@ def main():
                   "configuration could not use, and on this instance it is "
                   "the better of the two.")
 
-    # --- C7: the safety filter and the achievability construction ------
+                                                                         
     from analysis.mask_admissibility import (graph_properties,
                                              check_constructions,
                                              check_connectivity_cause)
@@ -278,7 +278,7 @@ def main():
         check_connectivity_cause()
     out = buf.getvalue()
 
-    # the paper's own achievability construction must be admissible
+                                                                   
     blk = out.split("paper's construction (2 layers)")[1].split("8-node ring")[0]
     admissible = "-> admissible" in blk
     check("C7a", "the achievability construction is admissible under the "
@@ -311,17 +311,17 @@ def main():
           "controller that needs to move into a rejected family is stuck. "
           "Reported as a property of the filter, not of the task.")
 
-    # --- C3: coverage radius consistent with altitude -------------------
-    # A camera with full horizontal FOV theta at altitude h covers a ground
-    # strip of full width 2*h*tan(theta/2), so the half-width (the radius)
-    # is h*tan(theta/2).
+                                                                          
+                                                                           
+                                                                          
+                        
     fov_deg = 74.0
     half_width = Z0 * math.tan(math.radians(fov_deg / 2))
     check("C3a", "z0=50 m with 74 deg FOV yields footprint half-width ~37 m",
           30 <= half_width <= 45, f"{half_width:.1f} m", "~37 m",
           "R_cov=35 m is a consistent camera footprint")
 
-    # --- C4: area count N*pi*R^2 >= K*A --------------------------------
+                                                                         
     supplied = N * math.pi * R_COV ** 2
     required = K * A
     ratio = supplied / required
@@ -329,20 +329,20 @@ def main():
           ratio > 1.0, f"{ratio:.3f}", "> 1.0",
           f"supplied {supplied:,.0f} m^2, required {required:,.0f} m^2")
 
-    # after one UAV fails
+                         
     ratio_after = (N - 1) * math.pi * R_COV ** 2 / required
     check("C4b", "area ratio still > 1 after one UAV fails",
           ratio_after > 1.0, f"{ratio_after:.3f}", "> 1.0",
           "reserve is a safety factor, not the only route to feasibility")
 
-    # --- C4c: covering-radius lower bound with packing density ---------
-    delta = math.pi / (2 * math.sqrt(3))  # densest congruent-disk packing
+                                                                         
+    delta = math.pi / (2 * math.sqrt(3))                                  
     r_cover = math.sqrt(K * A / (2 * math.sqrt(3) * N))
     check("C4c", "counting bound R_cov >= sqrt(K*Area/(pi*N))",
           R_COV >= math.sqrt(K * A / (math.pi * N)),
           f"{R_COV:.1f} m", f">= {math.sqrt(K*A/(math.pi*N)):.2f} m")
 
-    # --- C4d: area surplus sigma ----------------------------------------
+                                                                          
     sigma = supplied / A
     check("C4d", "area surplus sigma = N*pi*R^2/A is NOT a feasibility "
                  "criterion (report claim)",
@@ -351,21 +351,21 @@ def main():
           "sigma is an area ratio; a positive sigma does not imply a "
           "covering exists (this is the report's stated finding)")
 
-    # --- Region covering bound: N >= 4K --------------------------------
+                                                                         
     check("B1", "corner separation S=80 m exceeds 2*R_cov=70 m, so the four "
                 "corner K-cover discs are pairwise disjoint",
           SIDE > 2 * R_COV, f"{SIDE:.0f} m > {2*R_COV:.0f} m", "true")
 
-    # --- Battery: endurance ---------------------------------------------
+                                                                          
     endurance = B_MAX / P_HOVER
     check("P1a", "B_max/P_hover endurance is 600 s (10 min)",
           abs(endurance - 600.0) < 1e-6, f"{endurance:.0f} s", "600 s",
           "the report's B_max=30 kJ with P_hover=50 W")
 
-    # --- P1b: pack size vs platform class (INFORMATIONAL) ----------------
-    # The report states these are simulator parameters, not calibrated
-    # real-flight values, so this is recorded for transparency rather than
-    # scored as a pass/fail claim.
+                                                                           
+                                                                      
+                                                                          
+                                  
     RESULTS.append(dict(
         id="P1b", claim="B_max corresponds to a real pack of this class",
         status="INFO",
@@ -381,7 +381,7 @@ def main():
     print(f"         note: simulator parameter, not flight-calibrated "
           f"(report states this explicitly)\n")
 
-    # --- P2: P_move / P_hover ratio (INFORMATIONAL) ----------------------
+                                                                           
     ratio_move = P_MOVE / P_HOVER
     RESULTS.append(dict(
         id="P2", claim="P_move/P_hover ratio is physically plausible",
@@ -394,7 +394,7 @@ def main():
     print(f"[INFO] P2     P_move/P_hover ratio is physically plausible")
     print(f"         measured: {ratio_move:.2f} (measured range 1.09-1.20)\n")
 
-    # --- P3: charge rate -> C-rate (INFORMATIONAL) ----------------------
+                                                                          
     t_charge = (1.0 / CHARGE_STEP) * DT
     p_charge = B_MAX / t_charge
     c_rate = p_charge / (B_MAX / 3600.0)
@@ -409,7 +409,7 @@ def main():
     print(f"[INFO] P3     charge rate corresponds to a plausible C-rate")
     print(f"         measured: {c_rate:.2f} C (full charge in {t_charge:.0f} s)\n")
 
-    # --- P4: battery drain over the episode length actually used ---------
+                                                                           
     e_per_step_hover = P_HOVER * DT
     drain_ep = e_per_step_hover * EPISODE_USED
     drain_400 = e_per_step_hover * 400
@@ -430,8 +430,8 @@ def main():
           f"the report's full 10,000-step target the drain would be "
           f"{drain_10k:,.0f} J ({100*drain_10k/B_MAX:.0f}% of the pack).")
 
-    # --- Connectivity non-binding at R_comm = 40 m? ---------------------
-    # place N UAVs on a grid over the region; measure mean neighbour degree
+                                                                          
+                                                                           
     k = int(math.ceil(math.sqrt(N)))
     pts = []
     for r in range(k):
@@ -463,11 +463,11 @@ def main():
     print("         note: connectivity binds only after a failure removes "
           "a UAV\n")
 
-    # --- C6: the connectivity constraint in the DEPLOYED regime ----------
-    # C5 measures a static grid, which is not the deployment the experiments
-    # use.  This measures the graph the swarm actually flies: its degree
-    # distribution and how often the graph is not complete, i.e. how often a
-    # single UAV can be critical.
+                                                                           
+                                                                            
+                                                                        
+                                                                            
+                                 
     from uav_wireless.experiments import base_config
     from uav_wireless.env import A_PX, A_NX, A_PY, A_NY
     cfg = base_config()
@@ -516,20 +516,20 @@ def main():
           data=dict(mean_degree=mean_deg_run, max_degree=cfg.N - 1,
                     frac_complete=frac_complete, frac_leaves=frac_leaves))
 
-    # --- PHY: LoS probability at z0 -------------------------------------
+                                                                          
     p_los = phy.los_probability(Z0, 100.0) if hasattr(phy, "los_probability") else None
     if p_los is not None:
         check("PH1", "LoS probability at z0=50 m over 80 m is high",
               p_los > 0.9, f"{p_los:.4f}", "> 0.9",
               "geometry, not path loss, is the binding constraint")
 
-    # --- PHY: noise floor and link budget -------------------------------
+                                                                          
     wm = phy.WirelessModel()
     noise_w = getattr(wm, "noise_w", None)
     if callable(noise_w):
         noise_w = noise_w()
     if noise_w is None:
-        # kTB + noise figure, 20 MHz, NF 7 dB
+                                             
         k = 1.380649e-23
         t = 290.0
         bw = 20e6
@@ -539,7 +539,7 @@ def main():
           3.0e-13 < noise_w < 5.0e-13, f"{noise_w:.4e} W", "~3.99e-13 W")
 
     sens_db = float(phy.SNR_SENSITIVITY_DB) if hasattr(phy, "SNR_SENSITIVITY_DB") else 2.0
-    # free-space at 40 m, 2.437 GHz, 0.5 W (27 dBm), noise floor -93.99 dBm
+                                                                           
     fspl = 20 * math.log10(40.0) + 20 * math.log10(2.437e9) - 147.55
     rx_dbm = 27.0 - fspl
     snr_db = rx_dbm - (-93.99)
@@ -549,7 +549,7 @@ def main():
           f"{sens_db:.1f} dB)", "> 0 dB",
           "geometry, not path loss, binds the connectivity constraint")
 
-    # --- Python PHY vs INET model equivalence (analysis/phy_equivalence.py)
+                                                                            
     eq_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                            "phy_equivalence.json")
     if os.path.exists(eq_path):
@@ -566,11 +566,11 @@ def main():
     else:
         print("[SKIP] model equivalence: run analysis/phy_equivalence.py\n")
 
-    # --- OMNeT++ Phase 2 actually ran ------------------------------------
-    # The .sca file is shipped with the artefacts so that the audit runs
-    # from the artefact tree alone.  The sibling Simulation/ directory is
-    # still tried first, so a reader who has the full project tree gets
-    # the original file; otherwise the copy beside this script is used.
+                                                                           
+                                                                        
+                                                                         
+                                                                       
+                                                                       
     sca_candidates = [
         os.path.join(os.path.dirname(HERE), "..", "Simulation",
                      "UAV_IoT_Demo", "results", "phy_validation_0.sca"),
@@ -586,7 +586,7 @@ def main():
           "the 802.11 stack is executable end to end; the per-link "
           "physical observable is discussed in the report")
 
-    # --- the actual oracle on the reference config ----------------------
+                                                                          
     try:
         from analysis.feasibility import analyse_scene
         sc = analyse_scene(0, SimConfig(N=N, K=K, R_cov=R_COV, M=M, seed=0,
@@ -598,15 +598,15 @@ def main():
               f"SC reachable = {sc.get('oracle_SC_reachable')}",
               "> 0.95",
               "achievability ceiling for the trained policy")
-    except Exception as exc:  # pragma: no cover - diagnostic path
+    except Exception as exc:                                      
         print(f"[SKIP] F1 oracle check: {exc}\n")
 
-    # --- the evaluation of a sampled policy is reproducible ---------------
-    # Eq. (13) specifies that the deployed policy samples, and the sampling
-    # draws from the global torch RNG.  If that RNG is not seeded, the same
-    # policy on the same scene gives a different answer every time, and the
-    # paper's numbers cannot be reproduced from the stored artefact.  This
-    # item measures the property rather than asserting it.
+                                                                            
+                                                                           
+                                                                           
+                                                                           
+                                                                          
+                                                          
     try:
         import torch
         from uav_wireless.mappo import MAPPO
@@ -614,8 +614,8 @@ def main():
         c = SimConfig(N=4, K=2, M=8, episode_len=60, seed=0)
         e = UAVIoTEnv(c)
         ag = MAPPO(n_agents=c.N, obs_dim=e.obs_dim, state_dim=e.state_dim)
-        # the quantities compared are CONTINUOUS, so that a check on them
-        # cannot pass by accident
+                                                                         
+                                 
         keys = ("CK", "Energy", "Distance", "CovIntegral")
 
         def fingerprint(env_seed):
@@ -625,7 +625,7 @@ def main():
 
         torch.manual_seed(11)
         a1 = eval_agent(ag, c, steps=60, seed=2)
-        torch.manual_seed(999983)          # perturb the ambient RNG
+        torch.manual_seed(999983)                                   
         a2 = eval_agent(ag, c, steps=60, seed=2)
         f1 = tuple(round(float(a1[k]), 9) for k in keys)
         f2 = tuple(round(float(a2[k]), 9) for k in keys)
@@ -642,14 +642,14 @@ def main():
               "the policy samples, so the sampling stream is seeded from "
               "the evaluation seed; every controller therefore sees the "
               "same stream on the same scene")
-    except Exception as exc:  # pragma: no cover - diagnostic path
+    except Exception as exc:                                      
         print(f"[SKIP] R1 reproducibility check: {exc}\n")
 
-    # --- what the metrics do on an INFEASIBLE configuration --------------
-    # The framework's first claim is that a coverage ratio reported without
-    # an achievability reference cannot distinguish a strong controller from
-    # an infeasible configuration.  That is a claim about what the METRICS
-    # show, so it is measured here rather than asserted.
+                                                                           
+                                                                           
+                                                                            
+                                                                          
+                                                        
     inf_path = os.path.join(HERE, "infeasible_instance.json")
     if os.path.exists(inf_path):
         inf = json.load(open(inf_path, encoding="utf-8"))
@@ -673,12 +673,12 @@ def main():
         print("[SKIP] I1 infeasible instance: run "
               "analysis/infeasible_instance.py\n")
 
-    # --- the connectivity accounting: the filter's guarantee over actions --
-    # The paper claims that the safety filter and the joint projection keep
-    # the swarm connected across every action.  That is a claim about the
-    # simulator's behaviour, so it is measured step by step rather than
-    # asserted: the accounting counts the TRANSITIONS into a disconnected
-    # graph and attributes each of them.
+                                                                             
+                                                                           
+                                                                         
+                                                                       
+                                                                         
+                                        
     ca_path = os.path.join(HERE, "connectivity_accounting.json")
     if os.path.exists(ca_path):
         ca = json.load(open(ca_path, encoding="utf-8"))
@@ -700,24 +700,24 @@ def main():
         print("[SKIP] C7 connectivity accounting: run "
               "analysis/connectivity_accounting.py\n")
 
-    # --- the corrected N=5 deployment -------------------------------------
-    # The paper offers N = 5, K = 2, R_cov = 45 m as an alternative feasible
-    # corrected deployment.  The claim is that the region can be K-covered
-    # with five discs of that radius, and it is checked with a witness: four
-    # discs at the midpoints of the square's sides and one at the centre.
-    # Every point of the square must be within the radius of at least two of
-    # them, so the threshold is the worst second-nearest distance.
+                                                                            
+                                                                            
+                                                                          
+                                                                            
+                                                                         
+                                                                            
+                                                                  
     try:
         side = SIDE
         centres = [(side / 2, 0.0), (side / 2, side), (0.0, side / 2),
                    (side, side / 2), (side / 2, side / 2)]
-        grid = np.linspace(0.0, side, 161)          # 0.5 m
+        grid = np.linspace(0.0, side, 161)                 
         X, Y = np.meshgrid(grid, grid, indexing="ij")
         pts = np.stack([X.ravel(), Y.ravel()], axis=1)
         d = np.linalg.norm(pts[:, None, :] - np.asarray(centres)[None, :, :],
                            axis=-1)
         d.sort(axis=1)
-        worst2 = float(d[:, 1].max())              # second-nearest
+        worst2 = float(d[:, 1].max())                              
         check("C9", "the alternative corrected deployment N=5, K=2, "
                     "R_cov=45 m really does K-cover the region: four discs "
                     "at the side midpoints and one at the centre cover "
@@ -729,16 +729,16 @@ def main():
               "the paper's threshold for this deployment is the radius the "
               "construction needs; the construction is the witness that the "
               "deployment is feasible")
-    except Exception as exc:                        # pragma: no cover
+    except Exception as exc:                                          
         print(f"[SKIP] C9 alternative deployment: {exc}\n")
 
-    # --- a training run is a function of its seed -------------------------
+                                                                            
     try:
         import torch
         from uav_wireless.train import train_mappo
         c = SimConfig(N=4, K=1, M=8, episode_len=40, seed=0)
         a1, _ = train_mappo(c, episodes=2, n_steps=40, seed=0, verbose=False)
-        torch.manual_seed(987_654)      # perturb the ambient RNG
+        torch.manual_seed(987_654)                               
         a2, _ = train_mappo(c, episodes=2, n_steps=40, seed=0, verbose=False)
         p1 = dict(a1.actor.named_parameters())
         p2 = dict(a2.actor.named_parameters())
@@ -758,10 +758,10 @@ def main():
               "the seed is set at the start of train_mappo, before the "
               "actor and the critic are built, so the initial weights do "
               "not depend on the ambient state of the global RNG")
-    except Exception as exc:  # pragma: no cover - diagnostic path
+    except Exception as exc:                                      
         print(f"[SKIP] T1 training-determinism check: {exc}\n")
 
-    # --- report the audit ------------------------------------------------
+                                                                           
     n_fail = sum(1 for r in RESULTS if r["status"] == "FAIL")
     n_pass = sum(1 for r in RESULTS if r["status"] == "PASS")
     n_info = sum(1 for r in RESULTS if r["status"] == "INFO")

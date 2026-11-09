@@ -58,9 +58,9 @@ from uav_wireless import SimConfig, UAVIoTEnv
 from dataclasses import replace
 
 
-# ======================================================================
-# Rigorous necessary conditions
-# ======================================================================
+                                                                        
+                               
+                                                                        
 def region_2cover_bound(cfg: SimConfig) -> dict:
     """Necessary number of UAVs to K-cover the four corners of the region.
 
@@ -114,8 +114,8 @@ def sensor_packing_bound(sensors: np.ndarray, cfg: SimConfig) -> dict:
 
     used = np.zeros(n, dtype=bool)
     chosen = []
-    # take candidates in order of increasing local crowding: a sensor with few
-    # neighbours is a good first pick for a large packing
+                                                                              
+                                                         
     counts = (np.linalg.norm(sensors[:, None] - sensors[None], axis=-1)
               <= 2.0 * cfg.R_cov).sum(axis=1)
     for i in np.argsort(counts):
@@ -134,9 +134,9 @@ def sensor_packing_bound(sensors: np.ndarray, cfg: SimConfig) -> dict:
     )
 
 
-# ======================================================================
-# Oracle search
-# ======================================================================
+                                                                        
+               
+                                                                        
 def coverage_score(env: UAVIoTEnv, pos: np.ndarray) -> float:
     """Fraction of sensors K-covered by `pos`, through the env's own PHY gate."""
     pos = np.asarray(pos, dtype=float)
@@ -173,35 +173,35 @@ def _spread_pattern(cfg: SimConfig, rng: np.random.Generator) -> np.ndarray:
     n, side = cfg.N, cfg.side
     mode = int(rng.integers(0, 4))
 
-    if mode == 0:                                    # jittered lattice
+    if mode == 0:                                                      
         k = int(np.ceil(np.sqrt(n)))
         ticks = np.linspace(0, side, k + 1)[1:-1]
         if len(ticks) == 0:
             ticks = np.array([side / 2])
         gx, gy = np.meshgrid(ticks, ticks)
         pts = np.stack([gx.ravel(), gy.ravel()], axis=1)
-        if len(pts) < n:                             # lattice too small
+        if len(pts) < n:                                                
             extra = rng.uniform(0, side, size=(n - len(pts), 2))
             pts = np.vstack([pts, extra])
         idx = rng.permutation(len(pts))[:n]
         return np.clip(pts[idx].astype(float), 0, side)
 
-    if mode == 1:                                    # opposite-corner pairs
+    if mode == 1:                                                           
         c = side * 0.30
         pts = np.array([[c, c], [c, c], [side - c, side - c], [side - c, side - c],
                         [side / 2, side / 2]])
 
-    elif mode == 2:                                  # all four corners
+    elif mode == 2:                                                    
         c = side * 0.30
         pts = np.array([[c, c], [side - c, c], [c, side - c], [side - c, side - c]])
 
-    else:                                            # ring reaching the corners
+    else:                                                                       
         rad = max(np.sqrt(2) * side / 2 - cfg.R_cov * 0.6, 0.05 * side)
         ang = np.linspace(0, 2 * np.pi, n, endpoint=False)
         centre = np.array([side / 2, side / 2])
         pts = centre + rad * np.stack([np.cos(ang), np.sin(ang)], axis=1)
 
-    # pad by tiling and jitter, then crop so the shape is always exactly (N, 2)
+                                                                               
     if len(pts) < n:
         reps = int(np.ceil(n / len(pts)))
         pts = np.vstack([pts] * reps)
@@ -226,7 +226,7 @@ def search_best(env: UAVIoTEnv, iters: int = 80, restarts: int = 12,
     for _ in range(restarts):
         pos = _spread_pattern(cfg, rng).astype(float)
         if connected_only and not is_connected_at(env, pos):
-            # pull the swarm toward its centroid until the graph closes
+                                                                       
             centre = pos.mean(axis=0)
             for t in np.linspace(0.0, 1.0, 40):
                 cand = (1 - t) * pos + t * centre
@@ -263,9 +263,9 @@ def search_best(env: UAVIoTEnv, iters: int = 80, restarts: int = 12,
     return best_pos, best_ck
 
 
-# ======================================================================
-# Per-scene analysis
-# ======================================================================
+                                                                        
+                    
+                                                                        
 def analyse_scene(seed: int, cfg: SimConfig, iters: int = 80, restarts: int = 12):
     scene = dataclasses.replace(cfg, seed=seed)
     env = UAVIoTEnv(scene)
@@ -315,9 +315,9 @@ def geometric_surplus(cfg: SimConfig) -> dict:
     )
 
 
-# ======================================================================
-# CLI
-# ======================================================================
+                                                                        
+     
+                                                                        
 def packing_survey(cfg: SimConfig, seeds: int = 30) -> dict:
     """How the packing bound behaves over random sensor draws.
 

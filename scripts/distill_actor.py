@@ -58,9 +58,9 @@ def main():
         return 1
 
     d = np.load(dataset)
-    obs_all = d["obs"].astype(np.float32)   # (T, N, obs_dim)
-    acts_all = d["acts"].astype(np.int64)   # (T, N)
-    # flatten to per-agent samples (o_i, a_i)
+    obs_all = d["obs"].astype(np.float32)                    
+    acts_all = d["acts"].astype(np.int64)           
+                                             
     obs_all = obs_all.reshape(-1, obs_all.shape[-1])
     acts_all = acts_all.reshape(-1)
     print("dataset: %d per-agent samples, obs_dim %d, n_actions %d"
@@ -98,7 +98,7 @@ def main():
                 sel = idx[start:start + a.batch]
                 obs_b = torch.as_tensor(obs_all[sel], dtype=torch.float32)
                 act_b = torch.as_tensor(acts_all[sel], dtype=torch.int64)
-                logits = actor(obs_b)  # (B, n_actions)
+                logits = actor(obs_b)                  
                 loss = loss_fn(logits, act_b)
                 opt.zero_grad()
                 loss.backward()
@@ -109,14 +109,14 @@ def main():
                   % (os.path.basename(ck), epoch + 1, total / nbatch,
                      time.time() - t0), flush=True)
 
-        # save distilled checkpoint (same dict shape as MAPPO.save)
+                                                                   
         name = os.path.basename(ck)
         out_pt = os.path.join(outdir, name)
         torch.save(dict(actor=actor.state_dict(), critic=agent.critic.state_dict(),
                         value_norm=agent.value_norm,
                         ret_mean=agent._ret_mean, ret_std=agent._ret_std),
                    out_pt)
-        # copy the metadata json so eval_ckpt.py can restore the config
+                                                                       
         import shutil
         shutil.copyfile(ck.replace(".pt", ".json"),
                         os.path.join(outdir, name.replace(".pt", ".json")))

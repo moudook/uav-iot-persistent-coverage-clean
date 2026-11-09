@@ -31,7 +31,7 @@ from uav_wireless.experiments import base_config
 from uav_wireless.mappo import MAPPO
 from stress_regimes import get_config, REGIMES
 
-# regimes that keep the observation/state dims unchanged (zero-shot capable)
+                                                                            
 SAME_DIM_REGIMES = {"nominal", "small_battery", "low_comm",
                     "failure", "multi_failure", "clustered"}
 

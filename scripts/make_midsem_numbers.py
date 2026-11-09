@@ -33,9 +33,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 RUNS = os.path.join(ROOT, "ml_impl", "runs")
 
-#: tag -> (macro stem, human label)
-#: The stem decides the macro names: tag "exp_ego_eval" with stem "EgoShape"
-#: produces \tokEgoShapeCK, \tokEgoShapeSd, \tokEgoShapeCi, ...
+                                   
+                                                                            
+                                                               
 TAGS = {
     "exp_ego_eval": ("EgoShape", "ego bearing + distance shaping, evaluated"),
     "bugfix_eval": ("BugFix", "Part-1 bug fixes alone, held-out protocol"),
@@ -55,7 +55,7 @@ def t_half(xs, conf=0.95):
     try:
         from scipy import stats
         crit = float(stats.t.ppf(0.5 + conf / 2, n - 1))
-    except Exception:                                        # pragma: no cover
+    except Exception:                                                          
         crit = 1.96
     return crit * float(np.std(xs, ddof=1)) / np.sqrt(n)
 
@@ -104,7 +104,7 @@ def main():
     add("% Every value is read from an artefact under ml_impl/runs/.")
     add("")
 
-    # ---- rule baselines -------------------------------------------------
+                                                                           
     rp = ""
     for cand in ("rules_heldout", "rules"):
         p = os.path.join(RUNS, cand, "eval_rules.json")
@@ -129,7 +129,7 @@ def main():
             add(r"\newcommand{\tokRuleReactCK}{%s}" % tex(s["Reactive"]["CK"]))
         add(r"\newcommand{\tokRuleScenes}{%d}" % len(rules.get("eval_seeds", [])))
         add(r"\newcommand{\tokRuleSteps}{%d}" % int(rules.get("steps", 0)))
-        # strongest deterministic rule, computed rather than assumed
+                                                                    
         best = max(s.items(), key=lambda kv: kv[1]["CK"]) if s else None
         if best:
             add(r"\newcommand{\tokRuleMaxCK}{%s}" % tex(best[1]["CK"]))
@@ -137,7 +137,7 @@ def main():
         out["rules"] = rec
         add("")
 
-    # ---- trained configurations ----------------------------------------
+                                                                          
     for tag, (stem, label) in TAGS.items():
         d = load_tag(tag)
         if d is None:
@@ -145,10 +145,10 @@ def main():
         summ = summarise(d["rows"], d["kind"])
         if summ is None:
             continue
-        # Prefer the corrected-protocol held-out artefact when it exists:
-        # eval_heldout.json evaluates each frozen checkpoint on the same
-        # held-out scenes (seeds 1000+), which is the measurement the paper
-        # reports.  The seed-json eval_ck may predate that protocol.
+                                                                         
+                                                                        
+                                                                           
+                                                                    
         hout = os.path.join(RUNS, tag, "eval_heldout.json")
         if d["kind"] == "eval" and os.path.exists(hout):
             with open(hout, encoding="utf-8") as f:
@@ -191,31 +191,31 @@ def main():
             add(r"\newcommand{\tok%sEpisodes}{%d}" % (stem, int(ep)))
         add("")
 
-    # ---- the gap to the best rule --------------------------------------
+                                                                          
     learner = (out.get("exp_ego_eval") or out.get("exp_ego_now_eval")
                or out.get("exp_ego_shape") or out.get("si_fixed"))
     if learner and "rules" in out:
         best_name = max(out["rules"], key=lambda k: out["rules"][k]["CK"])
         best = out["rules"][best_name]
         gap = best["CK"] - learner["mean"]
-        # the rule is deterministic given a scene, so the uncertainty of the
-        # difference is the learner's own seed spread; the scenes cancel
+                                                                            
+                                                                        
         half = learner["half"]
         add(r"\newcommand{\tokNewGap}{%s}" % tex(gap))
         add(r"\newcommand{\tokNewGapCi}{[%s, %s]}" % (tex(gap - half),
                                                      tex(gap + half)))
         add(r"\newcommand{\tokNewGapN}{%d}" % learner["n"])
         add(r"\newcommand{\tokNewGapRule}{%s}" % best_name)
-        # the same difference read the other way round, which is the way the
-        # corrected section states it: a positive value means the learner is
-        # AHEAD of the rule
+                                                                            
+                                                                            
+                           
         add(r"\newcommand{\tokLearnerMinusRule}{%s}" % tex(-gap))
         add(r"\newcommand{\tokLearnerMinusRuleCi}{[%s, %s]}"
             % (tex(-gap - half), tex(-gap + half)))
         out["gap"] = {"to": best_name, "value": gap,
                       "ci": [gap - half, gap + half], "n": learner["n"]}
-        # whether the interval excludes zero decides the sentence, so the
-        # decision is made here once and the prose reads it
+                                                                         
+                                                           
         out["gap"]["learner_ahead_resolved"] = bool(-gap - half > 0)
         out["gap"]["rule_ahead_resolved"] = bool(gap - half > 0)
         if out["gap"]["learner_ahead_resolved"]:
@@ -229,7 +229,7 @@ def main():
                 r"this resolution: the interval on the difference includes "
                 r"zero}")
 
-    # ---- diagnostic baselines ------------------------------------------
+                                                                          
     rb = os.path.join(RUNS, "diag", "random_baseline.json")
     if os.path.exists(rb):
         with open(rb, encoding="utf-8") as f:
@@ -249,7 +249,7 @@ def main():
     with open(path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
 
-    # ---- human summary --------------------------------------------------
+                                                                           
     print("=" * 78)
     print("MEASUREMENTS  (generated from artefacts; %s)" % path)
     print("=" * 78)

@@ -133,10 +133,10 @@ def eval_agent(agent, cfg, steps=1000, seed=0, deterministic=False):
     import copy
     c = copy.deepcopy(cfg)
     c.seed = seed
-    # The policy samples, and the sampling draws from the global torch RNG.
-    # Seed it from the evaluation seed alone, so that the evaluation is a
-    # function of (policy, scene) and every controller sees the same stream
-    # on the same scene.  See uav_wireless/seeding.py.
+                                                                           
+                                                                         
+                                                                           
+                                                      
     from .seeding import seed_evaluation
     seed_evaluation(seed)
     env = UAVIoTEnv(c)
@@ -185,8 +185,8 @@ def run_base_comparison(base: SimConfig, out_csv="results_main.csv",
     for name, fn in [("Fixed", baseline_fixed),
                      ("Greedy", baseline_greedy),
                      ("Reactive", baseline_reactive),
-                     # the same rule WITHOUT the privileged global coverage
-                     # state: the information-asymmetry arm
+                                                                           
+                                                           
                      ("Reactive-local", baseline_reactive_local)]:
         sums = [fn(base, steps=base.episode_len, seed=s)
                 for s in range(eval_seeds)]
@@ -198,7 +198,7 @@ def run_base_comparison(base: SimConfig, out_csv="results_main.csv",
         rows.append(dict(model=name, **agg))
 
     if learned:
-        # the learned controller, measured over several training seeds
+                                                                      
         for name in ("MAPPO", "MAPPO-argmax"):
             r = learned.get(name)
             if r is None:
@@ -219,9 +219,9 @@ def run_base_comparison(base: SimConfig, out_csv="results_main.csv",
               f"CI={agg['CovIntegral']:.3f} E={agg['Energy']:.0f}")
         rows.append(dict(model="MAPPO", **agg))
 
-        # The deterministic (argmax) policy of the SAME learned actor, for
-        # comparison.  This is not the policy Eq. (13) specifies, and the gap
-        # between the two is a reported result, not an implementation detail.
+                                                                          
+                                                                             
+                                                                             
         det = [eval_agent(agent, base, steps=base.episode_len, seed=s,
                            deterministic=True) for s in range(eval_seeds)]
         dagg = {k: float(np.mean([s[k] for s in det])) for k in det[0]}
@@ -231,10 +231,10 @@ def run_base_comparison(base: SimConfig, out_csv="results_main.csv",
               f"CI={dagg['CovIntegral']:.3f}")
         rows.append(dict(model="MAPPO-argmax", **dagg))
 
-    # ---- the achievability ceiling ---------------------------------
-    # The teleporting placement oracle is the reference against which every
-    # coverage number in this table is meant to be read.  It is a property
-    # of the configuration, not of any controller, so it is reported once.
+                                                                      
+                                                                           
+                                                                          
+                                                                          
     try:
         import sys as _sys
         _sys.path.insert(0, os.path.dirname(os.path.dirname(
@@ -250,13 +250,13 @@ def run_base_comparison(base: SimConfig, out_csv="results_main.csv",
         rows.append(dict(model="Oracle (ceiling)", CK=orc, AG=1.0, SC=orc,
                          CovIntegral=0.0, Energy=0.0, Denied=0.0,
                          Reserve=0.0, Stranded=0.0, Returning=0.0))
-    except Exception as exc:                      # pragma: no cover
+    except Exception as exc:                                        
         print(f"{'Oracle':10s} (not computed: {exc})")
 
     with open(out_csv, "w", newline="") as f:
-        # the fieldnames are the UNION over the rows: the learned rows carry
-        # the seed-to-seed spread and the seed count, and the rule baselines
-        # do not, so taking the fields from the first row alone loses them
+                                                                            
+                                                                            
+                                                                          
         fields = []
         for r in rows:
             for k in r:
@@ -303,8 +303,8 @@ def run_ablation(base: SimConfig, out_csv="results_ablation.csv", stress=True,
     """
     import copy, csv, json, os
     here = os.path.dirname(os.path.abspath(__file__))
-    # the device this run trains on; it is part of the protocol, and a row
-    # measured on another device is never reused
+                                                                          
+                                                
     RUN_DEVICE = os.environ.get("UAV_DEVICE", "cpu")
     analysis = os.path.join(os.path.dirname(here), "analysis")
     print(f"\n=== Ablations ({'S8 combined stress' if stress else 'feasible base config'}) ===")
@@ -333,11 +333,11 @@ def run_ablation(base: SimConfig, out_csv="results_ablation.csv", stress=True,
     if append and os.path.exists(out_csv):
         with open(out_csv, newline="", encoding="utf-8") as f:
             existing = list(csv.DictReader(f))
-    # RESUME.  A row that was already measured under THIS protocol is
-    # reused rather than trained again: the ablation takes hours, and an
-    # interrupted run should not throw away the training it has done.  The
-    # protocol is part of the row, so a row measured under a different
-    # budget or a different number of seeds is never reused.
+                                                                     
+                                                                        
+                                                                          
+                                                                      
+                                                            
     stem = os.path.splitext(os.path.basename(out_csv))[0]
     done = {}
     jl = os.path.join(analysis, f"{stem}_rows.jsonl")
@@ -355,9 +355,9 @@ def run_ablation(base: SimConfig, out_csv="results_ablation.csv", stress=True,
                     and int(d.get("episodes", -1)) == int(episodes)
                     and int(d.get("eval_seeds", -1)) == int(eval_seeds)
                     and int(d.get("seeds", -1)) == int(seeds)
-                    # the device is part of the protocol: a variant
-                    # trained on the GPU and its partner trained on the
-                    # CPU are not a paired comparison
+                                                                   
+                                                                       
+                                                     
                     and str(d.get("device", "")) == RUN_DEVICE
                     and d.get("model") in variants):
                 done[d["model"]] = d
@@ -369,12 +369,12 @@ def run_ablation(base: SimConfig, out_csv="results_ablation.csv", stress=True,
                    if k not in ("out_csv", "stress", "eval_seeds",
                                 "seeds", "model", "per_seed_ck")}
             row["model"] = name
-            # the budget is part of the protocol and belongs in the row:
-            # it was dropped here, so a table of arms trained at a
-            # different budget from the base comparison did not say so
+                                                                        
+                                                                  
+                                                                      
             row["episodes"] = int(d.get("episodes", episodes))
-            # a row measured before the device was recorded still comes
-            # from this run's device, which the protocol pins
+                                                                       
+                                                             
             row["device"] = str(row.get("device")
                                 or os.environ.get("UAV_DEVICE", "cpu"))
             rows.append(row)
@@ -386,11 +386,11 @@ def run_ablation(base: SimConfig, out_csv="results_ablation.csv", stress=True,
         for s in range(seeds):
             c = copy.deepcopy(base)
             if stress:
-                # Ablate on the COMBINED-STRESS scenario (S8), not the base
-                # config.  On the base config no UAV fails and nobody contends
-                # for a pad, so the reserve / arbitration mechanisms never fire
-                # and every ablation trivially matches.  The stress config is
-                # what actually exercises them.
+                                                                           
+                                                                              
+                                                                               
+                                                                             
+                                               
                 c.failure_enabled = True
                 c.failure_time = 500
                 c.n_pads = 1
@@ -403,11 +403,11 @@ def run_ablation(base: SimConfig, out_csv="results_ablation.csv", stress=True,
             c.seed = s
             agent, _ = train_mappo(c, episodes=episodes, n_steps=c.episode_len,
                                    seed=s, verbose=False)
-            # the device is recorded with the row, so that an artefact says
-            # which device produced it: the floating-point kernels differ
-            # between the CPU and the GPU, so two runs of the same
-            # configuration on different devices are not the same
-            # experiment
+                                                                           
+                                                                         
+                                                                  
+                                                                 
+                        
             device_used = str(agent.device)
             evs = [eval_agent(agent, c, steps=c.episode_len, seed=e)
                    for e in range(eval_seeds)]
@@ -423,11 +423,11 @@ def run_ablation(base: SimConfig, out_csv="results_ablation.csv", stress=True,
         agg["CK_std"] = float(np.std([p["CK"] for p in per_seed]))
         agg["train_seeds"] = int(seeds)
         agg["episodes"] = int(episodes)
-        # the per-seed values are kept, so that a variant can be compared
-        # with the full configuration PAIRED: the variants share the
-        # training seeds, so the difference is measured on the same
-        # training runs and its spread is much smaller than the spread of
-        # either row
+                                                                         
+                                                                    
+                                                                   
+                                                                         
+                    
         agg["per_seed_CK"] = ";".join(f"{p['CK']:.6f}" for p in per_seed)
         agg["device"] = device_used
         print(f"{name:18s} CK={agg['CK']:.3f}+-{agg['CK_std']:.3f} "
@@ -436,22 +436,22 @@ def run_ablation(base: SimConfig, out_csv="results_ablation.csv", stress=True,
               f"Denied={agg['Denied']:.0f} Stranded={agg['Stranded']:.1f}",
               flush=True)
         rows.append(dict(model=name, **agg))
-        # the row is written as soon as it is finished, so that an
-        # interrupted run does not throw away the training it has done
+                                                                  
+                                                                      
         stem = os.path.splitext(os.path.basename(out_csv))[0]
         with open(os.path.join(analysis, f"{stem}_rows.jsonl"), "a",
                   encoding="utf-8") as f:
             f.write(json.dumps(_ablation_payload(
                 rows[-1], out_csv, stress, episodes, eval_seeds, seeds,
                 [p["CK"] for p in per_seed])) + "\n")
-        # and the CSV is rewritten after every row, so that the artefact the
-        # paper is built from is never behind the training
+                                                                            
+                                                          
         _write_ablation_csv(out_csv, existing + rows)
 
     allrows = existing + rows
     _write_ablation_csv(out_csv, allrows)
-    # the protocol is written next to the table, so that any row added later
-    # (the extra "no-map" variant) is measured under the same budget
+                                                                            
+                                                                    
     with open(os.path.join(analysis, "ablation_protocol.json"), "w",
               encoding="utf-8") as f:
         json.dump(dict(out_csv=os.path.basename(out_csv), stress=stress,
@@ -542,9 +542,9 @@ def run_learned_baselines(base: SimConfig, out_csv="results_learned_baselines.cs
         rows.append(dict(model=name, CK=float(np.mean(cks)),
                          CK_std=float(np.std(cks, ddof=1)) if len(cks) > 1
                          else 0.0,
-                         # the protocol, so that the artefact says how it
-                         # was measured: the number of training runs, the
-                         # per-seed values they came from, and the device
+                                                                         
+                                                                         
+                                                                         
                          train_seeds=int(len(cks)),
                          per_seed_CK=";".join(f"{v:.6f}" for v in cks),
                          device=str(getattr(agent, "device", "cpu")),
@@ -574,14 +574,14 @@ def run_scenarios(base: SimConfig, out_csv="results_scenarios.csv",
     import csv
     import copy
 
-    # The networks have fixed input sizes, and those sizes depend on the
-    # configuration: the one-hot agent identity has length N, the global
-    # state carries the sensor positions and the pad-occupancy vector, and
-    # the actor's map summary is fixed.  A policy trained at one (N, M,
-    # pads) combination therefore cannot be evaluated at another -- the
-    # input layer does not fit.  One policy is therefore trained per
-    # combination, and the scenarios that vary only the geometry of the
-    # problem transfer within their combination.
+                                                                        
+                                                                        
+                                                                          
+                                                                       
+                                                                       
+                                                                    
+                                                                       
+                                                
     groups = {}
     for sid, question, cfgs in scenario_cfgs(base):
         for vi, c0 in enumerate(cfgs):
@@ -605,9 +605,9 @@ def run_scenarios(base: SimConfig, out_csv="results_scenarios.csv",
     for sid, question, cfgs in scenario_cfgs(base):
         for vi, c0 in enumerate(cfgs):
             c = copy.deepcopy(c0)
-            # every policy of the group is evaluated on the SAME scene
-            # (the evaluation is seeded from the scene's own seed), so the
-            # comparison between the policies is paired
+                                                                      
+                                                                          
+                                                       
             evs = [eval_agent(ag, c, steps=c.episode_len, seed=c.seed)
                    for ag in agents[(c.N, c.M, c.n_pads)]]
             m = {k: float(np.mean([e[k] for e in evs])) for k in evs[0]}
@@ -615,16 +615,16 @@ def run_scenarios(base: SimConfig, out_csv="results_scenarios.csv",
                            if len(evs) > 1 else 0.0)
             m["train_seeds"] = len(evs)
             m["per_seed_CK"] = ";".join(f"{e['CK']:.6f}" for e in evs)
-            # the device the policies were trained and evaluated on: it is
-            # part of the protocol, and the row has to say which one
+                                                                          
+                                                                    
             m["device"] = str(getattr(
                 agents[(c.N, c.M, c.n_pads)][0], "device", "cpu"))
             r = baseline_reactive(c, steps=c.episode_len, seed=c.seed)
-            # the UNPRIVILEGED rule is the stronger of the two on the base
-            # configuration, and the matrix has to be read against the
-            # stronger reference
+                                                                          
+                                                                      
+                                
             rl = baseline_reactive_local(c, steps=c.episode_len, seed=c.seed)
-            # a short description of the variant for the CSV
+                                                            
             variant = (f"N={c.N} M={c.M} Rcov={c.R_cov:.0f} "
                        f"Rcomm={c.R_comm:.0f} pads={c.n_pads} "
                        f"Bmax={c.B_max:.0f} fail={c.failure_enabled} "
@@ -639,10 +639,10 @@ def run_scenarios(base: SimConfig, out_csv="results_scenarios.csv",
                              mappo_CK=m["CK"], mappo_SC=m["SC"],
                              mappo_AG=m["AG"],
                              mappo_CovIntegral=m["CovIntegral"],
-                             # the protocol the row was measured under, and
-                             # the per-training-seed values it came from:
-                             # a row that does not say how it was measured
-                             # cannot be checked
+                                                                           
+                                                                         
+                                                                          
+                                                
                              train_seeds=m.get("train_seeds"),
                              per_seed_CK=m.get("per_seed_CK"),
                              CK_std=m.get("CK_std"),

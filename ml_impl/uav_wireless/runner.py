@@ -31,9 +31,9 @@ from .mappo import MAPPO
 from .train import collect_rollout, baseline_fixed, baseline_greedy, baseline_reactive
 
 
-# ----------------------------------------------------------------------
-# Run directory / journal
-# ----------------------------------------------------------------------
+                                                                        
+                         
+                                                                        
 def run_dir(tag: str) -> str:
     d = os.path.join("runs", tag)
     os.makedirs(d, exist_ok=True)
@@ -55,9 +55,9 @@ def read_journal(tag: str):
         return [json.loads(l) for l in f if l.strip()]
 
 
-# ----------------------------------------------------------------------
-# Train
-# ----------------------------------------------------------------------
+                                                                        
+       
+                                                                        
 def train(
     cfg: SimConfig,
     steps: int = 10_000,
@@ -113,7 +113,7 @@ def train(
         B, summ = collect_rollout(env, agent, steps)
         losses = agent.update(B)
 
-        # Persist every transition count so the curve is auditable.
+                                                                   
         rec = dict(
             iter=it, tag=tag, seed=seed, steps=steps,
             wall_s=round(time.time() - t0, 1),
@@ -152,9 +152,9 @@ def train(
     return agent
 
 
-# ----------------------------------------------------------------------
-# Evaluate
-# ----------------------------------------------------------------------
+                                                                        
+          
+                                                                        
 @torch.no_grad()
 def evaluate(agent, cfg: SimConfig, steps: int, seeds=range(5)):
     """Deterministic rollout over independent seeds; returns per-seed metrics."""
@@ -190,9 +190,9 @@ def summarise(runs):
     }
 
 
-# ----------------------------------------------------------------------
-# CLI
-# ----------------------------------------------------------------------
+                                                                        
+     
+                                                                        
 def _base_cfg(steps: int):
     return SimConfig(episode_len=steps)
 
@@ -217,9 +217,9 @@ def main():
     elif a.mode == "eval":
         ck = a.ckpt or os.path.join(run_dir(a.tag), "best.pt")
         device = a.device or ("cuda" if torch.cuda.is_available() else "cpu")
-        # Build from the checkpoint's own config: dimensions scale with N, M and
-        # n_pads, so a checkpoint trained under one configuration cannot be
-        # loaded into networks sized for another.
+                                                                                
+                                                                           
+                                                 
         blob = torch.load(ck, map_location="cpu")
         saved = SimConfig(**blob["cfg"]) if "cfg" in blob else cfg
         env_probe = UAVIoTEnv(dataclasses.replace(saved, episode_len=1))

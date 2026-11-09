@@ -23,9 +23,9 @@ from .env import (
 from .mappo import MAPPO
 
 
-# ----------------------------------------------------------------------
-# Rollout buffer
-# ----------------------------------------------------------------------
+                                                                        
+                
+                                                                        
 def collect_rollout(env, agent, n_steps, deterministic=False, action_repeat=1):
     """
     Roll out one episode, recording per-agent transitions for the MAPPO update.
@@ -50,7 +50,7 @@ def collect_rollout(env, agent, n_steps, deterministic=False, action_repeat=1):
     truncated = False
     while t < n_steps:
         mask = np.stack(env.action_masks())
-        if mask.sum(axis=1).min() == 0:            # never leave an agent stuck
+        if mask.sum(axis=1).min() == 0:                                        
             for i in range(n):
                 if mask[i].sum() == 0:
                     mask[i] = True
@@ -72,7 +72,7 @@ def collect_rollout(env, agent, n_steps, deterministic=False, action_repeat=1):
         import torch
         with torch.no_grad():
             v = agent.value(torch.as_tensor(state, dtype=torch.float32, device=agent.device)).cpu().numpy()
-        v = np.full(n, float(v))                   # team value broadcast
+        v = np.full(n, float(v))                                         
 
         B["obs"][t] = obs
         B["mask"][t] = mask
@@ -82,14 +82,14 @@ def collect_rollout(env, agent, n_steps, deterministic=False, action_repeat=1):
         B["values"][t] = v
         B["active"][t] = (~env.failed) & (env.mode != -1)
 
-        # Innovation 8: action repeat.
+                                      
         r_acc = 0.0; done_acc = False
         for _ in range(action_repeat):
             obs, state, r, done, _ = env.step(acts)
             r_acc += r
             done_acc = done_acc or done
             if done: break
-        # Per-agent rewards (difference rewards) take precedence when present.
+                                                                              
         ar = getattr(env, "last_agent_rewards", None)
         if ar is not None:
             B["adv"][t] = ar
@@ -98,26 +98,26 @@ def collect_rollout(env, agent, n_steps, deterministic=False, action_repeat=1):
         t += 1
         if done_acc:
             break
-    # Distinguish a genuine terminal state from a truncation.
-    #
-    # The environment ends an episode when the mission time limit is reached.
-    # That is a TRUNCATION, not a terminal state: the value of the final state
-    # is still meaningful, so the GAE recursion must bootstrap from V(s_{t+1}).
-    # Conflating the two biases every value target downward.  The environment
-    # therefore reports `terminated` separately, and the rollout trusts it
-    # rather than inferring termination from `done`.
+                                                             
+     
+                                                                             
+                                                                              
+                                                                               
+                                                                             
+                                                                          
+                                                    
     env_terminated = bool(getattr(env, "terminated", False))
     truncated = not env_terminated
     terminal_state = state if truncated else None
 
-    # ---- GAE (26) with bootstrap at truncation -----------------------
-    # At a natural termination, the bootstrap value is 0. At a truncation
-    # (hit the horizon without done), we must bootstrap with V(s_{t+1}) so
-    # the value target is not biased downward. A previous revision used 0 in
-    # both cases, underestimating returns at the horizon.
+                                                                        
+                                                                         
+                                                                          
+                                                                            
+                                                         
     adv = np.zeros_like(B["adv"])
     last_gae = np.zeros(n, np.float32)
-    # Bootstrap value for the boundary (only used when truncated).
+                                                                  
     if truncated and agent is not None and terminal_state is not None:
         import torch
         with torch.no_grad():
@@ -136,11 +136,11 @@ def collect_rollout(env, agent, n_steps, deterministic=False, action_repeat=1):
         last_gae = delta + agent_gamma(agent) * agent_lam(agent) * last_gae
         adv[step] = last_gae
     B["adv"] = adv
-    # The batch must be truncated to the number of steps actually collected
-    # BEFORE the returns are formed.  The episode now ends early whenever a
-    # UAV failure terminates the mission, so t is not always n_steps, and
-    # forming the returns from the untruncated advantage array gave a
-    # shape mismatch (and would have silently mis-aligned the targets).
+                                                                           
+                                                                           
+                                                                         
+                                                                     
+                                                                       
     B = {k: v[:t] for k, v in B.items()}
     B["ret"] = B["adv"] + B["values"]
     return B, env.summary()
@@ -166,9 +166,9 @@ def agent_obs_dim(agent):
     return int(first.shape[-1])
 
 
-# ----------------------------------------------------------------------
-# Training
-# ----------------------------------------------------------------------
+                                                                        
+          
+                                                                        
 def train_mappo(cfg: SimConfig, episodes=120, n_steps=400, seed=0, log_every=10,
                verbose=True, per_agent_adv_norm=False, ent_coef=0.01,
                value_norm=True, device=None, bc_path=None,
@@ -201,32 +201,32 @@ def train_mappo(cfg: SimConfig, episodes=120, n_steps=400, seed=0, log_every=10,
     depends on what else the machine is running.)
     """
     torch.manual_seed(seed)
-    # The thread count changes the order of the floating-point reductions,
-    # and so changes the weights a training run produces.  The networks here
-    # are small, so the arithmetic is a rounding detail, but a rounding
-    # detail is exactly what a reproducibility claim cannot tolerate: the
-    # thread count is pinned here, so the result does not depend on how
-    # many cores the machine happened to be using.
+                                                                          
+                                                                            
+                                                                       
+                                                                         
+                                                                       
+                                                  
     try:
         torch.set_num_threads(1)
-    except Exception:                                       # pragma: no cover
+    except Exception:                                                         
         pass
     env = UAVIoTEnv(cfg)
     if device is None:
         device = os.environ.get("UAV_DEVICE", "cpu")
     if device == "auto":
-        # The policy network and the critic are small, and the simulator is
-        # a sequential Python loop, so the GPU is used for the network and
-        # the PPO update while the control loop stays on the host.  The
-        # device is only chosen if the GPU actually has room for it: a CUDA
-        # allocation that fails because the HOST is out of memory aborts the
-        # run.  This mode is NOT reproducible, because the answer depends
-        # on what else the machine is doing, so it is not the default.
+                                                                           
+                                                                          
+                                                                       
+                                                                           
+                                                                            
+                                                                         
+                                                                      
         device = "cpu"
         if torch.cuda.is_available():
             try:
                 free, _total = torch.cuda.mem_get_info()
-                if free > 1_500_000_000:      # 1.5 GB
+                if free > 1_500_000_000:              
                     device = "cuda"
             except Exception:
                 device = "cpu"
@@ -247,16 +247,16 @@ def train_mappo(cfg: SimConfig, episodes=120, n_steps=400, seed=0, log_every=10,
     hist = []
     base_bmax = cfg.B_max
     for ep in range(episodes):
-        # Innovation 1: curriculum over battery stress.  B_max ramps from
-        # 2x down to 1x of the base over the first half of training, so the
-        # policy sees depletion gradually instead of never (the cause of the
-        # small_battery failure).
+                                                                         
+                                                                           
+                                                                            
+                                 
         if curriculum:
             frac = min(1.0, ep / max(1, episodes // 2))
-            mult = 2.0 - frac  # 2.0 -> 1.0
+            mult = 2.0 - frac              
             env.cfg.B_max = base_bmax * mult
-        # Innovation 4: Reset-and-Finetune (ORCHID): at rf_at, reset the
-        # optimiser state and decay the learning rate.
+                                                                        
+                                                      
         if rf_at is not None and ep == rf_at:
             for opt in (agent.actor_opt, agent.critic_opt):
                 opt.param_groups[0]["lr"] *= lr_decay
@@ -267,11 +267,11 @@ def train_mappo(cfg: SimConfig, episodes=120, n_steps=400, seed=0, log_every=10,
         losses = agent.update(B, epochs=epochs, n_minibatch=n_minibatch)
         rec = dict(episode=ep, mean_reward=float(B["adv"][:, 0].mean()), **losses)
         rec.update({k: float(v) for k, v in summ.items()})
-        # the device is recorded with the training curve, so that every
-        # artefact says which device produced it
+                                                                       
+                                                
         rec["device"] = str(agent.device)
         hist.append(rec)
-        # intermediate checkpoint (survives power cuts)
+                                                       
         if ckpt_dir and (ep % ckpt_every == 0 or ep == episodes - 1):
             os.makedirs(ckpt_dir, exist_ok=True)
             agent.save(os.path.join(ckpt_dir, "latest.pt"))
@@ -288,9 +288,9 @@ def train_mappo(cfg: SimConfig, episodes=120, n_steps=400, seed=0, log_every=10,
     return agent, hist
 
 
-# ----------------------------------------------------------------------
-# Rule-based baselines (Table VIII)
-# ----------------------------------------------------------------------
+                                                                        
+                                   
+                                                                        
 def _seeded(cfg: SimConfig, seed: int) -> SimConfig:
     """Copy of cfg with the episode seed applied.
 
@@ -311,7 +311,7 @@ def _move_toward(env, i, target):
     if np.linalg.norm(d) < 1e-6:
         return A_HOVER
     step = c.v_max * c.dt
-    # snap to the dominant cardinal axis (discrete action space)
+                                                                
     if abs(d[0]) >= abs(d[1]):
         return A_PX if d[0] > 0 else A_NX
     return A_PY if d[1] > 0 else A_NY
@@ -341,7 +341,7 @@ def baseline_fixed(cfg: SimConfig, steps=1000, seed=0):
         acts = np.zeros(cfg.N, dtype=np.int64)
         for i in env._active_idx():
             if env.E[i] <= env.return_threshold(i):
-                # walk straight to the nearest pad, charge on arrival
+                                                                     
                 if np.min(np.linalg.norm(env.pads - env.p[i], axis=1)) <= env.cfg.pad_service_radius:
                     acts[i] = A_CHARGE
                 else:
@@ -417,7 +417,7 @@ def baseline_reactive_local(cfg: SimConfig, steps=1000, seed=0):
                 else:
                     acts[i] = _move_toward(env, i, env.pads[int(np.argmin(np.linalg.norm(env.pads - env.p[i], axis=1)))])
                 continue
-            # the sensors this UAV can judge for itself
+                                                       
             d = np.linalg.norm(env.sensors - env.p[i], axis=1)
             local = np.nonzero(d <= local_radius)[0]
             under_local = local[ncov[local] < cfg.K]
@@ -451,7 +451,7 @@ def baseline_reactive(cfg: SimConfig, steps=1000, seed=0):
             if len(under) == 0:
                 acts[i] = A_HOVER
                 continue
-            # assign the k-th uncovered sensor round-robin so the swarm splits up
+                                                                                 
             tgt = env.sensors[under[k % len(under)]]
             acts[i] = _move_toward(env, i, tgt)
         obs, st, r, done, _ = env.step(acts)

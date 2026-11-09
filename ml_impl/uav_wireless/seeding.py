@@ -40,9 +40,9 @@ from __future__ import annotations
 import numpy as np
 import torch
 
-# A large odd multiplier: the derived seeds are spread out, so that the
-# evaluation of scene 0 does not sit next to the training seed 0 in the
-# streams, and two scenes do not share a stream.
+                                                                       
+                                                                       
+                                                
 _MULT = 1_000_003
 
 

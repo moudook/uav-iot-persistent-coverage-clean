@@ -27,12 +27,12 @@ class Tokeniser(nn.Module):
         super().__init__()
         self.d = d
         self.n_tokens = n_tokens
-        # learnable projection of the whole obs into n_tokens x d
+                                                                 
         self.proj = nn.Linear(obs_dim, n_tokens * d)
         self.pos = nn.Parameter(torch.zeros(1, n_tokens, d))
 
     def forward(self, obs):
-        # obs: (B, obs_dim) -> (B, n_tokens, d)
+                                               
         x = self.proj(obs).view(obs.shape[0], self.n_tokens, self.d)
         return x + self.pos
 
@@ -40,7 +40,7 @@ class Tokeniser(nn.Module):
 class ActorAttention(nn.Module):
     def __init__(self, obs_dim, hidden=128, n_heads=4, n_tokens=8):
         super().__init__()
-        d = hidden // 2  # token width
+        d = hidden // 2               
         self.tok = Tokeniser(obs_dim, d=d, n_tokens=n_tokens)
         self.attn = nn.MultiheadAttention(embed_dim=d, num_heads=n_heads,
                                           batch_first=True, dropout=0.0)
@@ -56,11 +56,11 @@ class ActorAttention(nn.Module):
         nn.init.orthogonal_(self.head.weight, gain=0.01)
 
     def forward(self, obs):
-        x = self.tok(obs)                       # (B, T, d)
-        a, _ = self.attn(x, x, x)              # self-attention
+        x = self.tok(obs)                                  
+        a, _ = self.attn(x, x, x)                              
         x = self.ln1(x + a)
         x = self.ln2(x + self.ff(x))
-        x = x.flatten(1)                       # (B, T*d)
+        x = x.flatten(1)                                 
         return self.head(x)
 
 

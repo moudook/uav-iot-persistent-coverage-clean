@@ -41,32 +41,32 @@ from __future__ import annotations
 
 import numpy as np
 
-# --------------------------------------------------------------------------
-# IEEE 802.11n OFDM MCS table, 20 MHz channel, short guard interval.
-# Maps required RX SNR (dB) -> PHY rate (Mbit/s).  The sensitivity
-# column is the standard's, and the table is sorted by it, because the
-# selection below is a search over the threshold.
-#
-# The earlier table in this file was a mixture of rates and thresholds
-# from several PHYs, and its rows above the first never affected a
-# decision: every rate above the minimum is treated alike by the
-# service test, so the gate was exactly "SNR >= 2 dB" and the other
-# fourteen rows were decoration.
-# --------------------------------------------------------------------------
+                                                                            
+                                                                    
+                                                                  
+                                                                      
+                                                 
+ 
+                                                                      
+                                                                  
+                                                                
+                                                                   
+                                
+                                                                            
 MCS_TABLE = np.array(
     [
-        [2.0, 6.5],     # MCS 0  BPSK 1/2      (the minimum usable rate)
-        [5.0, 13.0],    # MCS 1  QPSK 1/2
-        [8.0, 19.5],    # MCS 2  QPSK 3/4
-        [11.0, 26.0],   # MCS 3  16-QAM 1/2
-        [15.0, 39.0],   # MCS 4  16-QAM 3/4
-        [18.0, 52.0],   # MCS 5  64-QAM 2/3
-        [20.0, 58.5],   # MCS 6  64-QAM 3/4
-        [25.0, 65.0],   # MCS 7  64-QAM 5/6
+        [2.0, 6.5],                                                     
+        [5.0, 13.0],                     
+        [8.0, 19.5],                     
+        [11.0, 26.0],                      
+        [15.0, 39.0],                      
+        [18.0, 52.0],                      
+        [20.0, 58.5],                      
+        [25.0, 65.0],                      
     ]
 )
 
-#: SNR (dB) below which no MCS is usable at all.
+                                                
 SNR_SENSITIVITY_DB = float(MCS_TABLE[0, 0])
 
 
@@ -144,20 +144,20 @@ class WirelessModel:
     def __init__(
         self,
         f_hz: float = 2.4e9,
-        p_tx: float = 0.1,             # W radiated by a UAV (20 dBm EIRP)
-        p_tx_sensor: float = 0.02,     # W radiated by a sensor (13 dBm)
+        p_tx: float = 0.1,                                                
+        p_tx_sensor: float = 0.02,                                      
         noise_fig_db: float = 7.0,
         bandwidth_hz: float = 20e6,
-        alpha_los: float = 2.0,         # path-loss exponent, clear LoS path
-        alpha_nlos: float = 3.5,        # path-loss exponent, obstructed path
+        alpha_los: float = 2.0,                                             
+        alpha_nlos: float = 3.5,                                             
         z0: float = 50.0,
-        rate_min_mbps: float = 6.5,    # minimum usable service rate
+        rate_min_mbps: float = 6.5,                                 
         shadowing_sigma_db: float = 4.0,
         rayleigh_scale: float = 1.0,
         mcs_shift_access: int = 0,
-        mcs_shift_backhaul: int = -2,  # relay keeps a 2 dB margin
-        access_cochannel: int = 0,     # other UAVs sharing a sensor's channel
-        use_fading: bool = False,      # fast fading is sub-dt; see module docstring
+        mcs_shift_backhaul: int = -2,                             
+        access_cochannel: int = 0,                                            
+        use_fading: bool = False,                                                   
     ):
         self.f_hz = f_hz
         self.p_tx = p_tx
@@ -174,19 +174,19 @@ class WirelessModel:
         self.access_cochannel = int(access_cochannel)
         self.use_fading = use_fading
 
-        # Thermal noise: -174 dBm/Hz + NF + 10log10(B), converted to watts.
+                                                                           
         self.noise_w = 10.0 ** (
             (-174.0 + noise_fig_db + 10.0 * np.log10(bandwidth_hz)) / 10.0
         ) / 1000.0
 
-        # Dedicated generator: never touch the global RNG.
+                                                          
         self.rng = np.random.default_rng(0)
-        self.shadow_uu_db: np.ndarray | None = None   # (N, N) symmetric, zero diag
-        self.shadow_su_db: np.ndarray | None = None   # (M, N)
+        self.shadow_uu_db: np.ndarray | None = None                                
+        self.shadow_su_db: np.ndarray | None = None           
         self.n_uav = 0
         self.n_sensor = 0
 
-    # -- propagation environment ------------------------------------------
+                                                                           
     def reset_links(self, n_uav: int, n_sensor: int, seed: int | None = None):
         """Draw the quasi-static shadowing environment for one episode.
 
@@ -201,8 +201,8 @@ class WirelessModel:
         self.n_sensor = int(n_sensor)
 
         z = self.rng.normal(0.0, self.shadowing_sigma_db, size=(self.n_uav, self.n_uav))
-        z = np.triu(z, 1)                    # strict upper triangle only
-        self.shadow_uu_db = z + z.T          # mirror => S(i,j) == S(j,i)
+        z = np.triu(z, 1)                                                
+        self.shadow_uu_db = z + z.T                                      
         self.shadow_su_db = self.rng.normal(
             0.0, self.shadowing_sigma_db, size=(self.n_sensor, self.n_uav)
         )
@@ -218,7 +218,7 @@ class WirelessModel:
             return None
         return self.shadow_su_db[:, np.asarray(uav_idx, dtype=int)]
 
-    # -- helpers -----------------------------------------------------------
+                                                                            
     def received_w(self, d_3d, los_prob, shadow_db=None, add_fading: bool = False,
                    p_tx: float | None = None):
         """Received power in watts: path loss, plus optional shadow / fading.
@@ -250,7 +250,7 @@ class WirelessModel:
         """Linear power ratio to dB, floored so log10 never sees zero."""
         return 10.0 * np.log10(np.maximum(linear, 1e-30))
 
-    # -- link evaluation ---------------------------------------------------
+                                                                            
     def uu_geometry(self, uav_xy):
         """Separation and LoS probability for all UAV pairs.
 
@@ -293,15 +293,15 @@ class WirelessModel:
         d3 = np.sqrt(d ** 2 + self.z0 ** 2)
         los = los_probability(d3, self.z0)
         idx = np.arange(k) if uav_idx is None else np.asarray(uav_idx, dtype=int)
-        # the access link is a SENSOR uplink: the sensor transmits
+                                                                  
         rx = self.received_w(d3, los, self._shadow_su(idx), add_fading,
-                             p_tx=self.p_tx_sensor)                          # (M, K)
+                             p_tx=self.p_tx_sensor)                                  
 
         cch = self.access_cochannel if cochannel is None else int(cochannel)
         if cch <= 0 or k < 2:
             return rx / self.noise_w
 
-        # Drop the strongest (that is the serving link), sum the next `cch`.
+                                                                            
         ordered = np.sort(rx, axis=1)[:, ::-1]
         inter = ordered[:, 1:cch + 1].sum(axis=1, keepdims=True)
         return rx / (inter + self.noise_w)
@@ -323,13 +323,13 @@ class WirelessModel:
         pos = np.atleast_2d(np.asarray(positions, dtype=float))
         idx = np.asarray(uav_idx, dtype=int)
         P = len(pos)
-        # (P, N, 2)
+                   
         diff = pos[:, None, :] - uav_xy[None, :, :]
         d3 = np.sqrt(np.sum(diff ** 2, axis=-1))
         los = np.ones_like(d3)
         shadow = None
         if self.shadow_uu_db is not None:
-            shadow = self.shadow_uu_db[np.ix_(idx, idx)][k]      # (N,)
+            shadow = self.shadow_uu_db[np.ix_(idx, idx)][k]            
         rx = self.received_w(d3, los, shadow, False)
         snr = rx / self.noise_w
         snr[:, k] = 0.0
@@ -379,11 +379,11 @@ class WirelessModel:
         idx = np.arange(n) if uav_idx is None else np.asarray(uav_idx, dtype=int)
         rx = self.received_w(d3, los, self._shadow_uu(idx), add_fading)
         snr = rx / self.noise_w
-        snr = 0.5 * (snr + snr.T)          # enforce reciprocity exactly
+        snr = 0.5 * (snr + snr.T)                                       
         np.fill_diagonal(snr, 0.0)
         return snr
 
-    # Retained under the old name so existing call sites keep working.
+                                                                      
     backhaul_sinr = backhaul_snr
 
     def link_rate_mbps(self, snr_db, backhaul: bool = False):
