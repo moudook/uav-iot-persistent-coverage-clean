@@ -35,7 +35,7 @@
     \item The feasibility certificate and energy ceiling
     \item Planning, distillation, classical baseline
     \item The audit and the OMNeT/INET co-simulation
-    \item What is real, what is not real, and what we need from you
+    \item What is real, what is not real, and what remains open
   \end{enumerate}
 \end{frame}
 
@@ -46,13 +46,13 @@
       \begin{itemize}\small
         \item A \textit{feasibility-certified evaluation study} of persistent $K$-coverage UAV-IoT over IoT sensors, with decentralized MARL control.
         \item It does \textit{not} claim RL is universally superior. It measures when learning wins, when it loses, and when the instance is infeasible.
-        \item The artifact is a 27-page report plus an executable INET co-simulation and claim audit.
+        \item The artifact is a 25-page report plus an executable INET co-simulation and claim audit.
       \end{itemize}
     \end{column}
     \begin{column}{0.5\textwidth}
       \textbf{Where it stands}
       \begin{itemize}\small
-        \item Corrected MAPPO beats the strongest rule by +0.028 on nominal (0.9512 vs 0.923).
+        \item MAPPO beats the strongest rule by +0.028 on nominal (0.9512 vs 0.923).
         \item Learning wins on low connectivity (+0.125) and both failure regimes; loses on small battery and spread start.
         \item Config is \textit{not} persistently energy-feasible (ceiling 0.113 at steady state; 400 s is a finite sprint).
       \end{itemize}
@@ -142,7 +142,7 @@
     \toprule
     Dimension & Old report & Current report \\
     \midrule
-    Length & 10 pages; claims deferred & 27 pages; measured claims with intervals \\
+    Length & 10 pages; claims deferred & 25 pages; measured claims with intervals \\
     Framing & MARL framework proposal & Feasibility-certified evaluation study \\
     Can it be measured? & Not cleanly; no frozen policy & Frozen policy; held-out scenes; paired CIs \\
     Headline & None verified & Learner 0.9512 vs rule 0.923; classical scheduler 0.929 \\
@@ -151,7 +151,7 @@
     Persistence & Assumed & Not persistently feasible; 400~s sprint only \\
     Metrics & SC / utilisation-driven & Non-degenerate metrics; refresh time; connectivity \\
     INET evidence & None & 802.11 MAC/PHY; BonnMotion; $t=40$~s; event \#71885 \\
-    Honesty & Not reported & Losses reported; appendix; 38 audit items, 0 failing \\
+    Honesty & Not reported & Losses reported; 38 audit items, 0 failing \\
     \bottomrule
   \end{tabular}
   \vspace{0.2cm}
@@ -205,7 +205,7 @@
   \end{itemize}
 \end{frame}
 
-\begin{frame}{The measured headline (nominal, corrected protocol)}
+\begin{frame}{The measured headline (nominal, held-out protocol)}
   \begin{center}
   \small
   \begin{tabular}{lccc}
@@ -299,7 +299,7 @@
 \begin{frame}{What the project actually contributes}
   \begin{enumerate}\small
     \item \textbf{A feasibility certificate} that stops you from reporting an unachievable number as a controller result
-    \item \textbf{A corrected evaluation protocol} that freezes the policy and benches it on held-out scenes with paired intervals
+    \item \textbf{A frozen-policy evaluation protocol} that benches the policy on held-out scenes with paired intervals
     \item \textbf{Honest negatives} --- where learning loses (small battery, spread start) and why the gap exists
     \item \textbf{Energy-flow ceiling} --- the certificate that says the current benchmark is a 400 s sprint, not persistence
     \item \textbf{One honest positive} --- low-connectivity regime where learning wins clearly and consistently
@@ -318,50 +318,11 @@
 
 \begin{frame}{Open issues (none hidden)}
   \begin{enumerate}\small
-    \item Observation documentation is wrong inside the report: the evaluated model uses map-grid + agent-ID + pad bearing (68 dims total); the text still implies they were excluded
-    \item The provenance of the 0.862 ``full coverage state'' result is not audited in the current code path (it measured 57-dim)
-    \item ``Persistent'' is a misnomer at 400 s; title and framing overstate the horizon
+    \item ``Persistent'' is a misnomer at 400 s; results are a finite-horizon study
     \item The two contributions are repackaged known results (packing duality; conservation of energy)
-    \item No hardware validation; no real wind / battery ageing; no multi-hop relay in dynamic topology
+    \item No hardware validation; no real wind or battery ageing; no multi-hop relay in dynamic topology
+    \item Planning is an oracle upper bound; the deployable distilled gain is directional (+0.0106, not resolved)
   \end{enumerate}
 \end{frame}
-
-\begin{frame}{What I need from you, sir}
-  \begin{enumerate}\small
-    \item \textbf{Scope decision:} (a) keep this as a conference submission with the honest framing; (b) add the two missing experiments (proactive staggered recharge; $R_{\mathrm{comm}}$ sweep) before submission; (c) drop the submission entirely
-    \item \textbf{Title/abstract decision:} keep energy-first wording, or move the certificate into the abstract and lead with the system
-    \item \textbf{Proposed next work:} (i) fix documentation mismatch; (ii) audit 0.862 provenance; (iii) $R_{\mathrm{comm}}$ sweep with the frozen policy; (iv) if results justify, run proactive recharging variant
-    \item \textbf{Risk acceptance:} the contribution is honest but marginal; the professor's name is on the report only if you approve
-  \end{enumerate}
-\end{frame}
-
-\begin{frame}{Next two weeks --- the concrete plan}
-  \begin{enumerate}\small
-    \item Week 1: fix the observation documentation inside the report; audit every claim in Table VIII against artefact; recompile and re-run the claim audit
-    \item Week 1: $R_{\mathrm{comm}} \in \{22,26,30,34,38,42\}$ sweep with frozen policy, Reactive-local rule, classical scheduler; record CK and mask-blocked fraction
-    \item Week 2: implement proactive staggered recharge (early recharge when pad free and $b_i<0.70$); retrain only if you approve it as the headline contribution
-    \item Week 2: final report package (27-30 pages, appendix with the measurement correction record, references current, claim audit clean)
-  \end{enumerate}
-\end{frame}
-
-\begin{frame}{Demo pointer (no fabrication; all reproducible)}
-  \begin{itemize}\small
-    \item \textbf{OmerNet run:} \texttt{wsl -d Ubuntu -- opp\_env run inet-4.6.0 -c 'cd .../uav\_omnet \&\& opp\_run -u Cmdenv ...'}\;\; $\rightarrow$ event \#71885, $t=40$ s, End.
-    \item \textbf{Claim audit:} \texttt{python ml\_impl/analysis/claim\_audit.py}\;\; $\rightarrow$ 34 pass, 0 fail
-    \item \textbf{PPT:} \texttt{PPT\_SI\_CHANGES.pdf} --- this deck
-    \item \textbf{Report:} \texttt{Mlawn-midsem-tex.pdf} --- 27 pages, current title
-    \item \textbf{Context bundle:} \texttt{PROJECT\_REPORT\_CONTEXT.txt} --- for independent review
-  \end{itemize}
-\end{frame}
-
-\begin{frame}{Three bottom lines}
-  \begin{enumerate}\small
-    \item \textbf{What we have:} a correct, reproducible, honest study that shows where learning wins and loses, why the configuration cannot persist, and why the metric was misleading
-    \item \textbf{What we do not have:} a novel RL algorithm, a persistent mission, or a hardware result --- and the paper does not pretend otherwise
-    \item \textbf{The decision you must make:} whether to keep the submission, reframe it around the energy/impossibility story, or stop here
-  \end{enumerate}
-\end{frame}
-
-
 
 \end{document}
